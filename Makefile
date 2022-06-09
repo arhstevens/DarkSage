@@ -57,7 +57,10 @@ OPT += -DMPI  #  This creates an MPI version that can be used to process files i
 CC = mpicc  # sets the C-compiler
 endif
 
-
+CFLAGS +=-fsanitize=undefined -fsanitize=bounds -fsanitize=address# -fsanitize-undefined-trap-on-error -fstack-protector-all
+LIBFLAGS += -fsanitize=undefined -fsanitize=bounds -fsanitize=address# -fsanitize-undefined-trap-on-error -fstack-protector-all
+# clang will need this flag
+ LIBFLAGS += -shared-libasan
 
 OPTIMIZE = -O2 -Wall -Wextra -Wshadow   # optimization and warning flags (default)
 
@@ -82,13 +85,13 @@ endif
 
 LIBS   :=   -lm  $(GSL_LIBS)
 
-CFLAGS :=   -g $(OPTIONS) $(OPT) $(OPTIMIZE) $(GSL_INCL)
+CFLAGS +=   -g $(OPTIONS) $(OPT) $(OPTIMIZE) $(GSL_INCL)
 
 default: all
 
 $(EXEC): $(OBJS) 
 #$(CC) $(OPTIMIZE) $(OBJS) $(LIBS)   -o  $(EXEC) -g
-	$(CC) $(OBJS) $(LIBS) -o $@
+	$(CC) $(LIBFLAGS) $(OBJS) $(LIBS) $(LIBFLAGS) -o $@
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -c $< -o $@
