@@ -727,7 +727,7 @@ void update_disc_radii(int p)
         const double c_gdisc = Gal[p].Rvir / Gal[p].GasDiscScaleRadius;
         const double GM_sdisc_r = G * (Gal[p].StellarMass - Gal[p].ClassicalBulgeMass - Gal[p].SecularBulgeMass) * inv_Rvir;
         const double GM_gdisc_r = G * Gal[p].ColdGas * inv_Rvir;
-        double vrot, rrat, RonRvir, AvHotPotential, reincTime, intgd1, intgd2, sigma2_low, sigma2_try;//, BulgeIntegral, ss, ff;
+        double vrot, rrat, RonRvir, AvHotPotential, reincTime, intgd1, intgd2;//, BulgeIntegral, ss, ff;
         int kmax;
         double Rhot = sqrt(Gal[p].R2_hot_av);
         double j2_mbulge = sqr(Gal[p].SpinClassicalBulge[0]) + sqr(Gal[p].SpinClassicalBulge[1]) + sqr(Gal[p].SpinClassicalBulge[2]);

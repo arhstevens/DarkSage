@@ -12,12 +12,12 @@
 
 void starformation_and_feedback(int p, int centralgal, double dt, int step, double time, int k_now)
 {
-  double strdot, stars, reheated_mass, ejected_mass, fac, metallicity, stars_sum, area, SFE_H2, f_H2_const, Sigma_0gas, DiscGasSum, DiscStarsSum, DiscPre, ColdPre;
+  double strdot, stars, reheated_mass, ejected_mass, metallicity, stars_sum, area, SFE_H2, f_H2_const, DiscGasSum, DiscStarsSum, DiscPre, ColdPre;
   double r_inner, r_outer;
   double reff, tdyn, cold_crit, strdotfull, H2sum, new_metals; // For SFprescription==3
 
   double NewStars[N_BINS], NewStarsMetals[N_BINS];
-  int i, k;
+  int i;
     
   double feedback_mass[4];
     
@@ -229,8 +229,8 @@ void calculate_feedback_masses(int p, double stars, int i, int centralgal, doubl
 {
     // Mightn't be necessary to pass 'area' in -- could just calculate it here if it isn't used outside this function.
     
-    double reheated_mass, ejected_cold_mass, ejected_mass, strdot, fac, Sigma_0gas;
-    double energy_feedback, annulus_radius, annulus_velocity, cold_specific_energy, reheat_specific_energy, excess_energy, eject_specific_energy, escape_velocity2, vertical_velocity;//, VV, specific_energy_ratio, a, b, c, bracket_term, discriminant; // for new feedback recipe
+    double reheated_mass, ejected_cold_mass, ejected_mass, fac, Sigma_0gas;
+    double energy_feedback, annulus_radius, annulus_velocity, cold_specific_energy, reheat_specific_energy, eject_specific_energy, escape_velocity2, vertical_velocity;//, VV, specific_energy_ratio, a, b, c, bracket_term, discriminant; // for new feedback recipe
     double reheated_mass_old, v_wind2, v_therm2, two_vv;
     int iter;
     
@@ -1092,13 +1092,11 @@ void project_disc_with_dispersion(double DiscMass[N_BINS], double DiscMetals[N_B
 void update_HI_H2(int p)
 {
     double area, f_H2, f_H2_HI, Pressure, f_sigma;
-    int i, iter;
+    int i;
     double angle = acos(Gal[p].SpinStars[0]*Gal[p].SpinGas[0] + Gal[p].SpinStars[1]*Gal[p].SpinGas[1] + Gal[p].SpinStars[2]*Gal[p].SpinGas[2])*180.0/M_PI;
-    double galaxy_ion_term, annulus_ion_term, sigma_gas, fH2_defswap, full_ratio, solution_ratio, full_ratio_squared;
+    double galaxy_ion_term, sigma_gas, full_ratio;
     double s, Zp, chi, c_f, Sigma_comp0, Tau_c;
-    double X_H, Z, f_neutral, f_neutral_new, Y_He;
-    int iter_max = 100;
-    double tol = 1e-3;
+    double X_H, Z, f_neutral, Y_He;
     
     sigma_gas = (1.1e6 + 1.13e6 * ZZ[Gal[p].SnapNum])/UnitVelocity_in_cm_per_s;
     
@@ -1193,7 +1191,6 @@ void delayed_feedback(int p, int k_now, int centralgal, double time, double dt)
     int k, i;
     double t0, t1, metallicity, return_mass, energy_feedback, annulus_radius, annulus_velocity, cold_specific_energy, reheat_specific_energy, reheated_mass, hot_specific_energy, ejected_specific_energy, excess_energy, return_metal_mass, new_metals, satellite_specific_energy, j_hot, hot_thermal_and_kinetic, eject_specific_energy, escape_velocity2, ejected_cold_mass, norm_ratio, reheat_eject_sum;
     double reheated_mass_old, v_wind2, v_therm2, two_vv, vertical_velocity;
-    int iter;
     double StellarOutput[2];
     
     double inv_FinalRecycleFraction = 1.0/FinalRecycleFraction;
@@ -1229,7 +1226,7 @@ void delayed_feedback(int p, int k_now, int centralgal, double time, double dt)
     // might be more optimal to do this calculation outside this function and feed it in.  Or, even better, build a look-up table at the start of running Dark Sage.  The same calculation is being done many times with the current set-up, which is redundant.  The logic right now is safe though!
     if(k_now==N_AGE_BINS-1) return;
     double ReturnFraction[N_AGE_BINS], SNperMassRemaining[N_AGE_BINS];
-    double time_convert = 1e-3 * UnitTime_in_s / SEC_PER_MEGAYEAR / Hubble_h;
+//    double time_convert = 1e-3 * UnitTime_in_s / SEC_PER_MEGAYEAR / Hubble_h;
     for(k=N_AGE_BINS-1; k>k_now; k--)
     {
         t0 = 0.5*(AgeBinEdge[k]+AgeBinEdge[k+1]) - (time+0.5*dt); // start of time window considered for the delayed feedback
@@ -1413,6 +1410,7 @@ void delayed_feedback(int p, int k_now, int centralgal, double time, double dt)
         if(reheat_specific_energy>0 && eject_specific_energy>0)
         {            
             // initialise for while-loop
+            int iter;
             reheated_mass_old = 0.999 * energy_feedback / reheat_specific_energy;
             reheated_mass = 0.5 * energy_feedback / reheat_specific_energy;
             

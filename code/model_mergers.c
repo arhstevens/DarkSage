@@ -10,7 +10,7 @@
 
 
 
-double estimate_merging_time(int halonr, int gal, int centralgal)
+double estimate_merging_time(int gal, int centralgal)
 {
   double coulomb, mergtime, SatelliteMass, SatelliteRadius;
   int i;
@@ -241,7 +241,7 @@ double grow_black_hole(int merger_centralgal, double* disc_mass_ratio)
 
 void quasar_mode_wind(int p, float BHaccrete, int centralgal)
 { // I should probably out through the centralgal ID here
-    double quasar_energy, cold_gas_energy, hot_gas_energy, DiscGasSum, cold_gas_energy_tot;
+    double quasar_energy, DiscGasSum;
     double annulus_radius, annulus_velocity, cold_specific_energy, ejected_specific_energy, satellite_specific_energy, j_hot, hot_thermal_and_kinetic, hot_specific_energy, ejected_mass, ejected_metals, Delta_specific_energy, vertical_velocity;
     int k;
 
@@ -556,7 +556,7 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
 	assert(DiscGasSum <= 1.01*Gal[p].ColdGas && DiscGasSum >= Gal[p].ColdGas/1.01);
       
     // First need to know the pos and vel of the centre of momentum to measure j relative to there
-    double dCOM_p[3], dCOM_t[3], dvCOM_p[3], dvCOM_t[3], j_t[3], j_p[3], m_t, m_p, inv_m_sum;
+    double dCOM_p[3], dCOM_t[3], dvCOM_p[3], dvCOM_t[3], j_t[3], j_p[3], m_t, m_p;
     m_t = get_Mhost_internal(p, t, 0.0);
     m_p = get_satellite_mass(p);
     double m_t_frac = m_t/(m_t+m_p);
@@ -950,10 +950,10 @@ void disrupt_satellite_to_ICS(int centralgal, int gal, int k_now)
 //==== FUNCTION BELOW IS DEPRECATED FOR NEW MODEL ====//
 void collisional_starburst_recipe(double disc_mass_ratio[N_BINS], int merger_centralgal, int centralgal, double dt, int mode, int step, int k_now)
 {
- double stars, reheated_mass, ejected_mass, fac, metallicity, CentralVvir, eburst, Sigma_0gas, area, stars_sum, metals_stars, stars_angmom, ejected_cold_mass;
+ double stars, reheated_mass, ejected_mass, metallicity, CentralVvir, eburst, area, stars_sum, metals_stars, stars_angmom, ejected_cold_mass;
  double r_inner, r_outer, j_bin, new_metals;
  //double NewStars[N_BINS], NewStarsMetals[N_BINS];
- int k, s;
+ int k;
 
  // This is the major and minor merger starburst recipe of Somerville et al. 2001. 
  // The coefficients in eburst are taken from TJ Cox's PhD thesis. 

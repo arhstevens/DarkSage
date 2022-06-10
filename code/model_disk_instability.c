@@ -21,7 +21,6 @@ void check_disk_instability(int p, int centralgal, double dt, int step, double t
 	int i, s, k;
     int first, first_gas, first_star;
 	
-    double star_init = Gal[p].StellarMass;
     double unstable_stars_age[N_AGE_BINS], unstable_metals_age[N_AGE_BINS];
     
     int k_now = get_stellar_age_bin_index(time);
@@ -493,7 +492,7 @@ void check_disk_instability(int p, int centralgal, double dt, int step, double t
 double deal_with_unstable_gas(double unstable_gas, int p, int i, double metallicity, int centralgal, double r_inner, double r_outer)
 {
 	double gas_sink, gas_sf;
-	double stars, reheated_mass, ejected_mass, Sigma_0gas, fac, area;
+	double stars, reheated_mass, ejected_mass, area;
     double metallicity_new;
 	
     if(unstable_gas > Gal[p].DiscGas[i])

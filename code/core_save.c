@@ -158,7 +158,7 @@ void walk_down(int i)
 {
     if(HaloGal[i].RootID >= 0) return; // No need to do anything if the RootID has already been found for this galaxy
     
-    double StellarMass, ICS, LocalIGS;
+//    double StellarMass, ICS, LocalIGS;
     int GalaxyNr, p, SnapNum, mergeType, g;
     GalaxyNr = HaloGal[i].GalaxyNr;
     SnapNum = HaloGal[i].SnapNum;
@@ -246,7 +246,7 @@ void walk_down(int i)
 void prepare_galaxy_for_output(int filenr, int tree, struct GALAXY *g, struct GALAXY_OUTPUT *o)
 {
     
-  int j, step, HaloID, RootHaloID, mergeSum;
+  int j, step;
         
   o->SnapNum = g->SnapNum;
   o->Type = g->Type;
@@ -426,7 +426,7 @@ void prepare_galaxy_for_output(int filenr, int tree, struct GALAXY *g, struct GA
 
 void prepare_galaxy_for_output_large(int filenr, int tree, struct GALAXY *g, struct GALAXY_OUTPUT_LARGE *o)
 {
-  int j, k, step, HaloID, RootHaloID, mergeSum;
+  int j, k, step;
     
   o->SnapNum = g->SnapNum;
   o->Type = g->Type;
@@ -621,6 +621,7 @@ void prepare_galaxy_for_output_large(int filenr, int tree, struct GALAXY *g, str
 void finalize_galaxy_file(int filenr)
 {
     int n;
+    printf("Finalizing file number %i\n", filenr);
     
     for(n = 0; n < NOUT; n++)
     {

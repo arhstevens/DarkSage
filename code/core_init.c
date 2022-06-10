@@ -111,7 +111,6 @@ double time_to_present(double z)
   gsl_function F;
   gsl_integration_workspace *workspace;
   double time, result, abserr;
-    size_t neval;
 
   workspace = gsl_integration_workspace_alloc(WORKSIZE);
   F.function = &integrand_time_to_present;    

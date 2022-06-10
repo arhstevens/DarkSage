@@ -12,7 +12,7 @@
 
 double cooling_recipe(int gal, double dt)
 {
-  double tcool, x, logZ, lambda, rcool, rho_rcool, rho0, temp, coolingGas, c_beta, cb_term;
+  double tcool, x, logZ, lambda, rcool, rho_rcool, rho0, temp, coolingGas, cb_term;
   int snapshot = Halo[Gal[gal].HaloNr].SnapNum;
 
   if(Gal[gal].HotGas > 0.0 && Gal[gal].Vvir > 0.0)
@@ -148,7 +148,7 @@ double cooling_recipe(int gal, double dt)
 
 double do_AGN_heating(double coolingGas, int p, double dt, double x, double rcool, double specific_energy_change)
 {
-  double AGNrate, EDDrate, AGNaccreted, AGNcoeff, AGNheating, metallicity, r_heat_new, heating_mass;
+  double AGNrate, EDDrate, AGNaccreted, AGNcoeff, AGNheating, metallicity;
 
     if(Gal[p].HotGas <= 0.0)
         return 0.0;
