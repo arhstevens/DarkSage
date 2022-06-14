@@ -421,7 +421,15 @@ void evolve_galaxies(int halonr, int ngal)	// note: halonr is here the FOF-backg
         
       // Check for disk instability
       if(DiskInstabilityOn>0)
+      {
+          double metallicity;
+          for(i=0; i<N_BINS; i++)
+          {
+            metallicity = get_metallicity(Gal[p].DiscGas[i], Gal[p].DiscGasMetals[i]);
+            assert(Gal[p].DiscGasMetals[i] <= Gal[p].DiscGas[i]);
+          }
         check_disk_instability(p, centralgal, dt, step, time);
+      }
     }
 
     // check for satellite disruption and merger events 

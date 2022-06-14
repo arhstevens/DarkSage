@@ -78,7 +78,7 @@ double estimate_merging_time(int gal, int centralgal)
 
 void deal_with_galaxy_merger(int p, int merger_centralgal, int centralgal, double time, double dt, int step)
 {
-  double mi, ma, mass_ratio;
+  double mi, ma, mass_ratio, stars, metallicity;
   double disc_mass_ratio[N_BINS], PostRetroGas[N_BINS];
   int i, k_now;
   
@@ -118,8 +118,20 @@ void deal_with_galaxy_merger(int p, int merger_centralgal, int centralgal, doubl
   if(g_max>0) 
     gas_mass_ratio = g_min/g_max;
 
+    
+    for(i=0; i<N_BINS; i++)
+    {
+        metallicity = get_metallicity(Gal[merger_centralgal].DiscGas[i], Gal[merger_centralgal].DiscGasMetals[i]);
+        assert(Gal[merger_centralgal].DiscGasMetals[i] <= Gal[merger_centralgal].DiscGas[i]);
+    }
+    
   add_galaxies_together(merger_centralgal, p, centralgal, k_now, mass_ratio, disc_mass_ratio, PostRetroGas);
     
+    for(i=0; i<N_BINS; i++)
+    {
+        metallicity = get_metallicity(Gal[merger_centralgal].DiscGas[i], Gal[merger_centralgal].DiscGasMetals[i]);
+        assert(Gal[merger_centralgal].DiscGasMetals[i] <= Gal[merger_centralgal].DiscGas[i]);
+    }
   
   for(i=0; i<N_BINS; i++) assert(disc_mass_ratio[i] <= 1.0 && disc_mass_ratio[i]>=0.0);
 
@@ -157,6 +169,8 @@ void deal_with_galaxy_merger(int p, int merger_centralgal, int centralgal, doubl
         {
             Gal[p].DiscGas[i] = NewGasDisc[i];
             Gal[p].DiscGasMetals[i] = NewGasDiscMetals[i];
+            metallicity = get_metallicity(Gal[merger_centralgal].DiscGas[i], Gal[merger_centralgal].DiscGasMetals[i]);
+            assert(Gal[merger_centralgal].DiscGasMetals[i] <= Gal[merger_centralgal].DiscGas[i]);
         }
     }
     
@@ -170,13 +184,21 @@ void deal_with_galaxy_merger(int p, int merger_centralgal, int centralgal, doubl
     Gal[merger_centralgal].NumMajorMergers += 1;
     Gal[p].mergeType = 2;  // Mark as major merger
       
-    if(BetaBurst<=0)
-    {
-      for(i=N_BINS-1; i>=0; i--)
-      {
-          deal_with_unstable_gas(gas_mass_ratio*Gal[merger_centralgal].DiscGas[i], merger_centralgal, i, get_metallicity(Gal[merger_centralgal].DiscGas[i], Gal[merger_centralgal].DiscGasMetals[i]), merger_centralgal, Gal[merger_centralgal].DiscRadii[i], Gal[merger_centralgal].DiscRadii[i+1]);
-      }
-    }
+//    if(BetaBurst<=0)
+//    {
+//      for(i=N_BINS-1; i>=0; i--)
+//      {
+//          if(!(Gal[merger_centralgal].DiscGasMetals[i-1] <= Gal[merger_centralgal].DiscGas[i-1]))
+//          {
+//              printf("unstable_gas = %e\n", gas_mass_ratio*Gal[merger_centralgal].DiscGas[i]);
+//              printf("metallicity = %e\n", get_metallicity(Gal[merger_centralgal].DiscGas[i], Gal[merger_centralgal].DiscGasMetals[i]));
+//              printf("p, i, Gal[p].DiscGasMetals[i-1], Gal[p].DiscGas[i-1] = %i, %i, %e, %e\n", merger_centralgal, i, Gal[merger_centralgal].DiscGasMetals[i-1], Gal[merger_centralgal].DiscGas[i-1]);
+//          }
+//          assert(Gal[p].DiscGasMetals[i-1] <= Gal[p].DiscGas[i-1]);
+//          
+//          stars = deal_with_unstable_gas(gas_mass_ratio*Gal[merger_centralgal].DiscGas[i], merger_centralgal, i, get_metallicity(Gal[merger_centralgal].DiscGas[i], Gal[merger_centralgal].DiscGasMetals[i]), merger_centralgal, Gal[merger_centralgal].DiscRadii[i], Gal[merger_centralgal].DiscRadii[i+1]);
+//      }
+//    }
   }
   else
   {
@@ -188,8 +210,17 @@ void deal_with_galaxy_merger(int p, int merger_centralgal, int centralgal, doubl
   Gal[p].mergeIntoGalaxyNr = Gal[merger_centralgal].GalaxyNr;
 
 
+    
+    
   if(DiskInstabilityOn>0)
+  {
+      for(i=0; i<N_BINS; i++)
+      {
+          metallicity = get_metallicity(Gal[merger_centralgal].DiscGas[i], Gal[merger_centralgal].DiscGasMetals[i]);
+          assert(Gal[merger_centralgal].DiscGasMetals[i] <= Gal[merger_centralgal].DiscGas[i]);
+      }
   	check_disk_instability(merger_centralgal, centralgal, dt, step, time);
+  }
   else
     update_stellardisc_scaleradius(p); // will already be done within check_disk_instability otherwise
 }
@@ -672,14 +703,41 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
                     
                     j_seg = sqrt( sqr(NewSpin[0]*jvec[0]) + sqr(NewSpin[1]*jvec[1]) + sqr(NewSpin[2]*jvec[2]) ); // only accounts for component parallel to the new gas disc plane
                     
+                    for(k=0; k<N_BINS; k++)
+                    {
+                        if(NewDisc[k] <= 0.0)
+                        {
+                            if(NewDiscMetals[k] >= 1e-10) printf("Resetting both to 0: k, NewDisc[k] , NewDiscMetals[k] = %i, %e, %e\n", k, NewDisc[k] , NewDiscMetals[k]);
+                            NewDisc[k] = 0.0;
+                            NewDiscMetals[k] = 0.0;
+                        }
+                        
+                        if(!(NewDiscMetals[k] <= NewDisc[k]))
+                        {
+                            printf("k, NewDisc[k], NewDiscMetals[k] = %i, %e, %e\n", k, NewDisc[k], NewDiscMetals[k]);
+                            printf("g, i, Gal[gal].DiscGas[i], Gal[gal].DiscGasMetals[i], seg_frac = %i, %i, %e, %e, %e\n", g, i, Gal[gal].DiscGas[i], Gal[gal].DiscGasMetals[i], seg_frac);
+                        }
+                        assert(NewDiscMetals[k] <= NewDisc[k]);
+                    }
+                    
+                    
                     // find the annulus of the new disc that j_seg corresponds to
                     for(k=1; k<=N_BINS; k++)
                     {
                         if(j_seg < DiscBinEdge[k]) break;
                     }
                     k -= 1;
+                    // In principle, should be able to add DiscGasMetals directly to NewDiscMetals, but there was a case Metals exceeding total mass leaking through on OzSTAR somehow.  No idea what the cause was, but going through get_metallicity() as an extra step will hopefully circumvent the issue.
                     NewDisc[k] += Gal[gal].DiscGas[i] * seg_frac;
-                    NewDiscMetals[k] += Gal[gal].DiscGasMetals[i] * seg_frac;
+                    NewDiscMetals[k] += get_metallicity(Gal[gal].DiscGas[i], Gal[gal].DiscGasMetals[i]) * Gal[gal].DiscGas[i] * seg_frac;
+                    
+                    
+                    if(!(NewDiscMetals[k] <= NewDisc[k]))
+                    {
+                        printf("k, NewDisc[k], NewDiscMetals[k] = %i, %e, %e\n", k, NewDisc[k], NewDiscMetals[k]);
+                        printf("g, i, Gal[gal].DiscGas[i], Gal[gal].DiscGasMetals[i], seg_frac = %i, %i, %e, %e, %e\n", g, i, Gal[gal].DiscGas[i], Gal[gal].DiscGasMetals[i], seg_frac);
+                    }
+                    assert(NewDiscMetals[k] <= NewDisc[k]);
                     
                     // check if projection was prograde or retrograde
                     if(NewSpin[0]*jvec[0] + NewSpin[1]*jvec[1] + NewSpin[2]*jvec[2] > 0.0)
@@ -692,8 +750,19 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
         // Update cold gas mass and spin of central (equate to NewDisc)
         for(i=0; i<N_BINS; i++)
         {
+            if(NewDisc[i] <= 0)
+            {
+                NewDisc[i] = 0.0;
+                NewDiscMetals[i] = 0.0;
+            }
+            if(!(NewDiscMetals[i] <= NewDisc[i])) printf("i, NewDisc[i], NewDiscMetals[i] = %i, %e, %e\n", i, NewDisc[i], NewDiscMetals[i]);
+            assert(NewDiscMetals[i] <= NewDisc[i]);
+            
             Gal[t].DiscGas[i] = NewDisc[i];
             Gal[t].DiscGasMetals[i] = NewDiscMetals[i];
+            
+            if(!(NewDiscMetals[i] <= NewDisc[i])) printf("i, Gal[t].DiscGas[i], Gal[t].DiscGasMetals[i] = %i, %e, %e\n", i, Gal[t].DiscGas[i], Gal[t].DiscGasMetals[i]);
+            assert(Gal[t].DiscGasMetals[i] <= Gal[t].DiscGas[i]);
         }
         DiscGasSum = get_disc_gas(t); // mostly just there to make sure ColdGas and MetalsColdGas are correct
         
