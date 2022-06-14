@@ -43,6 +43,8 @@ void reincorporate_gas(int centralgal, double dt, int step)
           Gal[centralgal].ReincTime *= reincTime_fac;  // reduce reincorporation time to account for halo growth
       }
       reincorporated = Gal[centralgal].EjectedMass * dt / Gal[centralgal].ReincTime;
+      Gal[centralgal].ReincTime -= dt; // time to reincorporate what's left is reduced by the time that has elapsed
+      if(Gal[centralgal].ReincTime <= 0.0) Gal[centralgal].ReincTime = 0.001 * dt; // set to small value for instant reincorporation in next sub-time-step
   }
 
     
