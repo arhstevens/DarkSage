@@ -45,8 +45,65 @@ void reincorporate_gas(int centralgal, double dt, double time, int k_now)
   }
   else
   {
+      int k;
+      for(k=0; k<k_now; k++) assert(Gal[centralgal].EjectedMass_Reinc[k] <= 0);
+      
+      // halo expansion should speed things up.  Mixing implicity happens between ejecta here too
+      double frac_drop = pow(Gal[centralgal].Rvir / Gal[centralgal].prevRvir, 2.0/STEPS) - 1.0;
+      
+      if (frac_drop >= 1.0)
+      {
+          for(k=k_now+1; k<=N_AGE_BINS; k++)
+          {              
+              Gal[centralgal].EjectedMass_Reinc[k-1] += Gal[centralgal].EjectedMass_Reinc[k];
+              Gal[centralgal].EjectedMass_Reinc[k] = 0.0;
+
+              Gal[centralgal].MetalsEjectedMass_Reinc[k-1] += Gal[centralgal].MetalsEjectedMass_Reinc[k];
+              Gal[centralgal].MetalsEjectedMass_Reinc[k] = 0.0;
+          }
+      }
+      else if (frac_drop > 0.0)
+      {
+          double drop_mass, drop_metals;
+          for(k=k_now+1; k<=N_AGE_BINS; k++)
+          {
+              drop_mass = frac_drop * Gal[centralgal].EjectedMass_Reinc[k];
+              drop_metals = frac_drop * Gal[centralgal].MetalsEjectedMass_Reinc[k];
+              
+              Gal[centralgal].EjectedMass_Reinc[k] -= drop_mass;
+              Gal[centralgal].EjectedMass_Reinc[k-1] += drop_mass;
+
+              Gal[centralgal].MetalsEjectedMass_Reinc[k] -= drop_metals;
+              Gal[centralgal].MetalsEjectedMass_Reinc[k-1] += drop_metals;
+          }
+      }
+      
+      double eject_sum=0.0;
+      double eject_metals_sum=0.0;
+      for(k=k_now; k<=N_AGE_BINS; k++)
+      {
+          if((Gal[centralgal].EjectedMass_Reinc[k] < MIN_STARFORMATION) || (Gal[centralgal].MetalsEjectedMass_Reinc[k] < MIN_STARFORMATION * BIG_BANG_METALLICITY))
+          {
+              Gal[centralgal].EjectedMass_Reinc[k] = 0.0;
+              Gal[centralgal].MetalsEjectedMass_Reinc[k] = 0.0;
+          }
+          eject_sum += Gal[centralgal].EjectedMass_Reinc[k];
+          eject_metals_sum += Gal[centralgal].MetalsEjectedMass_Reinc[k];
+      }
+      if(!((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass))) 
+      {
+          printf("eject_sum, Gal[centralgal].EjectedMass = %e, %e\n", eject_sum, Gal[centralgal].EjectedMass);
+          printf("eject_metals_sum, Gal[centralgal].MetalsEjectedMass = %e, %e\n", eject_sum, Gal[centralgal].EjectedMass);
+      }
+      assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+      assert((eject_metals_sum <= 1.01 * Gal[centralgal].MetalsEjectedMass) && (eject_metals_sum >= 0.99 * Gal[centralgal].MetalsEjectedMass));
+      Gal[centralgal].EjectedMass = eject_sum;
+      Gal[centralgal].MetalsEjectedMass = eject_metals_sum;
+
+      
       reincorporated = Gal[centralgal].EjectedMass_Reinc[k_now] * dt / (time - AgeBinEdge[k_now+1]);
       if(reincorporated > Gal[centralgal].EjectedMass_Reinc[k_now]) reincorporated = Gal[centralgal].EjectedMass_Reinc[k_now];
+      if(!(reincorporated >= 0)) printf("reincorporated, Gal[centralgal].EjectedMass_Reinc[k_now] = %e, %e\n", reincorporated, Gal[centralgal].EjectedMass_Reinc[k_now]);
       assert(reincorporated >= 0);
   }
 
