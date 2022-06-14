@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore")
 
 ###### USER NEEDS TO SET THESE THINGS ######
 #indir = '/Users/adam/DarkSage_runs/571j/' # directory where the Dark Sage data are
-indir = '/Users/adam/DarkSage_runs/Genesis/L75n324/26n/'
+indir = '/Users/adam/DarkSage_runs/Genesis/L75n324/35/'
 sim = 4 # which simulation Dark Sage has been run on -- if it's new, you will need to set its defaults below.
 #   0 = Mini Millennium, 1 = Full Millennium, 2 = SMDPL, 3 = Genesis-Millennium, 4=Genesis-Calibration, 5 = MDPL2
 
@@ -46,6 +46,8 @@ elif sim==3:
 elif sim==4:
     h = 0.6751
     Lbox = 75.0/h * (len(files)/8.)**(1./3)
+    Omega = 0.3121
+    OmegaLambda = 0.6879
 elif sim==5:
     h = 0.6777
     Lbox = 1000.0/h * (len(files)/1000.)**(1./3)
@@ -96,15 +98,34 @@ try:
     r.massfunction(SM, Lbox, range=[SM_med-0.1, 12.1], ls='--', ax=ax[0], label=r'{\sc Dark Sage}, $N_{\rm p}\!\geq\!20$')
     r.massfunction(SM[G['LenMax']>=100], Lbox, range=[SM_med-0.1, 12.1], ax=ax[0], label=r'{\sc Dark Sage}, $N_{\rm p,max}\!\geq\!100$')
     r.massfunction((SM+ICS)[G['LenMax']>=100], Lbox, range=[SM_med-0.1, 12.1], ax=ax[0], label=r'{\sc Dark Sage} + ICS', c='grey', zo=0)
-    r.massfunction(SM[(BTT<=0.5)*(G['LenMax']>=100)], Lbox, range=[SM_med-0.1, 12.1], c='b', lw=1, ax=ax[0])
-    r.massfunction(SM[BTT<=0.5], Lbox, range=[SM_med-0.1, 12.1], c='b', lw=1, ls='--', ax=ax[0])
-    r.massfunction(SM[(BTT>0.5)*(G['LenMax']>=100)], Lbox, range=[SM_med-0.1, 12.1], c='r', lw=1, ax=ax[0])
-    r.massfunction(SM[BTT>0.5], Lbox, range=[SM_med-0.1, 12], c='r', lw=1, ls='--', ax=ax[0])
-    r.stellar_massfunction_obsdata(h, ax[0])
-    SMF_bd, logM_bd = r.schechter(3.67e-3*(h/0.7)**3, 10**(10.74)/(h/0.7)**2, -0.525, logM=np.arange(SM_med-0.1, 12.1,0.1))
-    SMF_dd, logM_dd = r.schechter(0.855e-3*(h/0.7)**3, 10**(10.70)/(h/0.7)**2, -1.39, logM=np.arange(SM_med-0.1, 12.1,0.1))
-    ax[0].plot(logM_dd, SMF_dd, 'b-', lw=8, alpha=0.2, label=r'Moffett et al.~(2016) disc-dominated', zorder=0)
-    ax[0].plot(logM_bd, SMF_bd, 'r-', lw=8, alpha=0.2, label=r'Moffett et al.~(2016) bulge-dominated', zorder=0)
+    r.massfunction(SM[(BTT<=0.1)*(G['LenMax']>=100)], Lbox, range=[SM_med-0.1, 12.1], c='b', lw=1, ax=ax[0])
+    r.massfunction(SM[BTT<=0.1], Lbox, range=[SM_med-0.1, 12.1], c='b', lw=1, ls='--', ax=ax[0])
+    r.massfunction(SM[(BTT>0.9)*(G['LenMax']>=100)], Lbox, range=[SM_med-0.1, 12.1], c='r', lw=1, ax=ax[0])
+    r.massfunction(SM[BTT>0.9], Lbox, range=[SM_med-0.1, 12], c='r', lw=1, ls='--', ax=ax[0])
+#    r.stellar_massfunction_obsdata(h, ax[0])
+#    SMF_bd, logM_bd = r.schechter(3.67e-3*(h/0.7)**3, 10**(10.74)/(h/0.7)**2, -0.525, logM=np.arange(SM_med-0.1, 12.1,0.1))
+#    SMF_dd, logM_dd = r.schechter(0.855e-3*(h/0.7)**3, 10**(10.70)/(h/0.7)**2, -1.39, logM=np.arange(SM_med-0.1, 12.1,0.1))
+#    ax[0].plot(logM_dd, SMF_dd, 'b-', lw=8, alpha=0.2, label=r'Moffett et al.~(2016) disc-dominated', zorder=0)
+#    ax[0].plot(logM_bd, SMF_bd, 'r-', lw=8, alpha=0.2, label=r'Moffett et al.~(2016) bulge-dominated', zorder=0)
+    
+    # new GAMA SMF, not yet public
+    data_D21 = np.loadtxt('/Users/adam/Documents/DarkSagePaper4/GAMA_SMF.txt', usecols=(0,1,2), skiprows=1, delimiter=' ', dtype=np.float64)
+    x_D21, y_D21, yerr_D21 = data_D21[:,0], data_D21[:,1], data_D21[:,2]
+    y_D21 += 0.0769 # adjust for average under-density of GAMA
+    y_D21 -= 3*np.log10(r.comoving_distance(0.1,100*h,0,Omega,OmegaLambda) / r.comoving_distance(0.1,70.0,0,0.3,0.7))
+    x_D21 += 2*np.log10(r.comoving_distance(0.079,100*h,0,Omega,OmegaLambda) / r.comoving_distance(0.079,70.0,0,0.3,0.7))
+    ax[0].errorbar(x_D21, 10**y_D21, yerr=[10**(y_D21+yerr_D21)-10**y_D21, 10**y_D21-10**(y_D21-yerr_D21)], label=r'Driver et al.~(2021)', elinewidth=2, marker='o', color='purple', linestyle='none')
+    
+    # new GAMA SMF by morphology, not yet public
+    data_morph = np.loadtxt('/Users/adam/Documents/DarkSagePaper4/GAMA_SMF_morph.txt', usecols=(0,1,2,7,8), skiprows=3, delimiter=' ', dtype=np.float64)
+    x_morph, y_Ell, yerr_Ell, y_Disc, yerr_Disc = data_morph[:,0], data_morph[:,1], data_morph[:,2], data_morph[:,3], data_morph[:,4]
+    SMF_adjust = 0.0866 - 3*np.log10(r.comoving_distance(0.08,100*h,0,Omega,OmegaLambda) / r.comoving_distance(0.08,70.0,0,0.3,0.7)) # adjust for average under-density of GAMA and differnces in assumed cosmology
+    y_Ell += SMF_adjust 
+    y_Disc += SMF_adjust
+    x_morph += 2*np.log10(r.comoving_distance(0.079*0.08,100*h,0,Omega,OmegaLambda) / r.comoving_distance(0.079*0.08,70.0,0,0.3,0.7)) # not sure on the average redshift here!
+    ax[0].errorbar(x_morph, 10**y_Ell, yerr=[10**(y_Ell+yerr_Ell)-10**y_Ell, 10**y_Ell-10**(y_Ell-yerr_Ell)], label=r'Driver et al.~(2021) E-type', elinewidth=2, marker='o', color='red', linestyle='none')
+    ax[0].errorbar(x_morph, 10**y_Disc, yerr=[10**(y_Disc+yerr_Disc)-10**y_Disc, 10**y_Disc-10**(y_Disc-yerr_Disc)], label=r'Driver et al.~(2021) D-type', elinewidth=2, marker='o', color='blue', linestyle='none')
+    
     ax[0].legend(loc='lower left', frameon=False, bbox_to_anchor=(-0.01, -0.01))
     ax[0].set_xlim(SM_med, 12)
     ax[0].set_xlabel(r'$\log_{10}(m_*~[{\rm M}_{\odot}])$')

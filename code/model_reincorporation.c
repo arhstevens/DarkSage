@@ -10,15 +10,15 @@
 
 
 
-void reincorporate_gas(int centralgal, double dt)
+void reincorporate_gas(int centralgal, double dt, int step)
 {
   double reincorporated, metallicity;
-  
-  // SN velocity is 630km/s, and the condition for reincorporation is that the 
-  // halo has an escape velocity greater than this, i.e. V_SN/sqrt(2) = 445.48km/s
+
 
   if(ReincorpotationModel==0)
   {
+      // SN velocity is 630km/s, and the condition for reincorporation is that the 
+      // halo has an escape velocity greater than this, i.e. V_SN/sqrt(2) = 445.48km/s
       double Vcrit = 445.48 * ReIncorporationFactor;
       assert(Gal[centralgal].HotGas >= Gal[centralgal].MetalsHotGas);
       if(Gal[centralgal].Vvir > Vcrit)
@@ -37,8 +37,11 @@ void reincorporate_gas(int centralgal, double dt)
   }
   else
   {
-      double reincTime_fac = dmin( pow(Gal[centralgal].prevRvir / Gal[centralgal].Rvir, 2.0/STEPS) , 1.0) ;
-      Gal[centralgal].ReincTime *= reincTime_fac;  // reduce reincorporation time to account for halo growth
+      if(step==0)
+      {
+          double reincTime_fac = dmin( pow(Gal[centralgal].prevRvir / Gal[centralgal].Rvir, 2.0) , 1.0) ;
+          Gal[centralgal].ReincTime *= reincTime_fac;  // reduce reincorporation time to account for halo growth
+      }
       reincorporated = Gal[centralgal].EjectedMass * dt / Gal[centralgal].ReincTime;
   }
 

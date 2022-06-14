@@ -41,7 +41,7 @@ double infall_recipe(int centralgal, int ngal, double Zcurr);
 void add_infall_to_hot(int centralgal, double infallingGas);
 double cooling_recipe(int centralgal, double dt);
 void cool_gas_onto_galaxy(int p, double coolingGas);
-void reincorporate_gas(int centralgal, double dt);
+void reincorporate_gas(int centralgal, double dt, int step);
 double estimate_merging_time(int gal, int centralgal);
 void deal_with_galaxy_merger(int p, int merger_centralgal, int centralgal, double time, double dt, int step);
 double dmax(double x, double y);

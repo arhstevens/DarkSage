@@ -355,7 +355,7 @@ void evolve_galaxies(int halonr, int ngal)	// note: halonr is here the FOF-backg
           assert(Gal[p].MetalsHotGas>=0);
 
           if(!(ReIncorporationFactor <= 0.0 && ReincorpotationModel==0))
-            reincorporate_gas(p, dt);
+            reincorporate_gas(p, dt, step);
       }
         
       // hot-gas stripping of satellites

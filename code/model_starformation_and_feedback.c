@@ -258,7 +258,7 @@ void calculate_feedback_masses(int p, double stars, int i, int centralgal, doubl
         }
         else if(SupernovaRecipeOn == 3 || SupernovaRecipeOn == 4)
         {
-            energy_feedback = FeedbackReheatCoupling * stars * EnergySNcode * SNperMassFormed; // still controlled by a coupling efficiency
+            energy_feedback = FeedbackReheatCoupling * stars * EnergySNcode * SNperMassFormed; // still controlled by a coupling efficiency for practical testing purposes
             annulus_radius = sqrt(0.5 * (sqr(Gal[p].DiscRadii[i]) + sqr(Gal[p].DiscRadii[i+1])) );
             annulus_velocity = 0.5 * (DiscBinEdge[i] + DiscBinEdge[i+1]) / annulus_radius;
             vertical_velocity = (1.1e6 + 1.13e6 * ZZ[Gal[p].SnapNum])/UnitVelocity_in_cm_per_s;
