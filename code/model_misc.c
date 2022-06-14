@@ -202,6 +202,13 @@ void init_galaxy(int p, int halonr)
             Gal[p].VelDispStarsAge[j][k] = c_s;
         }
     }
+    
+    for(k=0; k<=N_AGE_BINS; k++)
+    {
+        Gal[p].EjectedMass_Reinc[k] = 0.0;
+        Gal[p].MetalsEjectedMass_Reinc[k] = 0.0;
+    }
+
 
 //    update_disc_radii(p);
     

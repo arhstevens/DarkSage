@@ -209,14 +209,12 @@ double strip_from_satellite(int halonr, int centralgal, int gal, double max_stri
               metallicity = get_metallicity(Gal[gal].EjectedMass, Gal[gal].MetalsEjectedMass);
               Gal[gal].EjectedMass -= strippedGas;
               Gal[gal].MetalsEjectedMass -= strippedGas * metallicity;
-              update_reincorporation_time(centralgal, strippedGas);
               Gal[centralgal].LocalIGM += strippedGas;
               Gal[centralgal].MetalsLocalIGM += strippedGas * metallicity;
               strippedGas = 0.0;
         }
         else
         {
-              update_reincorporation_time(centralgal, Gal[gal].EjectedMass);
               Gal[centralgal].LocalIGM += Gal[gal].EjectedMass;
               Gal[centralgal].MetalsLocalIGM += Gal[gal].MetalsEjectedMass;
               strippedGas -= Gal[gal].EjectedMass;

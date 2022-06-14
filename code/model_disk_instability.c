@@ -9,7 +9,7 @@
 #include "core_proto.h"
 
 
-void check_disk_instability(int p, int centralgal, double dt, int step, double time)
+void check_disk_instability(int p, int centralgal, double dt, int step, double time, int k_now)
 {
 	// New treatment of instabilities based on the Toomre Q parameter
 	double Q_star, Q_gas, Q_gas_min, Q_star_min, Q_tot, W, Q_stable;
@@ -31,8 +31,6 @@ void check_disk_instability(int p, int centralgal, double dt, int step, double t
         NewStarsMetals[i] = 0.0;
         SNgas[i] = 0.0;
     }
-
-    int k_now = get_stellar_age_bin_index(time);
     
     DiscStarSum = get_disc_stars(p);
     DiscGasSum = get_disc_gas(p);
@@ -144,7 +142,7 @@ void check_disk_instability(int p, int centralgal, double dt, int step, double t
                 }
                 assert(Gal[p].DiscGasMetals[i-1] <= Gal[p].DiscGas[i-1]);
                 
-                stars = deal_with_unstable_gas(unstable_gas, p, i, metallicity, centralgal, r_inner, r_outer);
+                stars = deal_with_unstable_gas(unstable_gas, p, i, metallicity, centralgal, r_inner, r_outer, time, k_now);
                 assert(stars >= 0);
                 if(stars>=MIN_STARS_FOR_SN)
                     SNgas[i] = RecycleFraction * stars;
@@ -191,7 +189,7 @@ void check_disk_instability(int p, int centralgal, double dt, int step, double t
 	
 	gas_sink += Gal[p].BlackHoleMass; // Because this was set as -BHMass at the start, this is actually the increase in BH mass from the instab.
 	if(gas_sink>0.0 && AGNrecipeOn > 0)
-		quasar_mode_wind(p, gas_sink, centralgal);
+		quasar_mode_wind(p, gas_sink, centralgal, time, k_now);
 	
     
 	// Merge new-star disc with previous stellar disc
@@ -506,7 +504,7 @@ void check_disk_instability(int p, int centralgal, double dt, int step, double t
     
 }
 
-double deal_with_unstable_gas(double unstable_gas, int p, int i, double metallicity, int centralgal, double r_inner, double r_outer)
+double deal_with_unstable_gas(double unstable_gas, int p, int i, double metallicity, int centralgal, double r_inner, double r_outer, double time, int k_now)
 {
 	double gas_sink, gas_sf;
 	double stars, reheated_mass, ejected_mass, area;
@@ -520,14 +518,6 @@ double deal_with_unstable_gas(double unstable_gas, int p, int i, double metallic
     
     // these 2 terms only used when SupernovaRecipeOn>=3
     double hot_specific_energy, ejected_specific_energy, satellite_specific_energy, hot_thermal_and_kinetic, j_hot, ejected_cold_mass;
-    
-    if(!(Gal[p].DiscGasMetals[i-1] <= Gal[p].DiscGas[i-1]))
-    {
-        printf("unstable_gas = %e\n", unstable_gas);
-        printf("metallicity = %e\n", metallicity);
-        printf("p, i, Gal[p].DiscGasMetals[i-1], Gal[p].DiscGas[i-1] = %i, %i, %e, %e\n", p, i, Gal[p].DiscGasMetals[i-1], Gal[p].DiscGas[i-1]);
-    }
-    assert(Gal[p].DiscGasMetals[i-1] <= Gal[p].DiscGas[i-1]);
     
     if(HeatedToCentral>0)
     {
@@ -585,12 +575,6 @@ double deal_with_unstable_gas(double unstable_gas, int p, int i, double metallic
             m_down = m_up * j_gain / j_lose;
             Gal[p].DiscGas[i-1] += m_down;
             Gal[p].DiscGasMetals[i-1] += metallicity * m_down;
-            if(!(Gal[p].DiscGasMetals[i-1] <= Gal[p].DiscGas[i-1]))
-            {
-                printf("gas_sink, m_down, m_up = %e, %e, %e\n", gas_sink, m_down, m_up);
-                printf("metallicity, metallicity*m_down = %e, %e\n", metallicity, metallicity*m_down);
-                printf("p, i, Gal[p].DiscGasMetals[i-1], Gal[p].DiscGas[i-1] = %i, %i, %e, %e\n", p, i, Gal[p].DiscGasMetals[i-1], Gal[p].DiscGas[i-1]);
-            }
             assert(Gal[p].DiscGasMetals[i-1] <= Gal[p].DiscGas[i-1]);
         }
         
@@ -630,8 +614,8 @@ double deal_with_unstable_gas(double unstable_gas, int p, int i, double metallic
 		assert(Gal[p].DiscGasMetals[i] <= Gal[p].DiscGas[i]);
 
         assert(Gal[p].MetalsHotGas>=0);
-	    update_from_feedback(p, centralgal, reheated_mass, metallicity_new, i, ejected_cold_mass);
-        update_from_ejection(p, centralgal, ejected_mass);
+	    update_from_feedback(p, centralgal, reheated_mass, metallicity_new, i, ejected_cold_mass, time, k_now);
+        update_from_ejection(p, centralgal, ejected_mass, time, k_now);
 
 	}
     

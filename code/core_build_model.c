@@ -355,7 +355,7 @@ void evolve_galaxies(int halonr, int ngal)	// note: halonr is here the FOF-backg
           assert(Gal[p].MetalsHotGas>=0);
 
           if(!(ReIncorporationFactor <= 0.0 && ReincorpotationModel==0))
-            reincorporate_gas(p, dt, step);
+            reincorporate_gas(p, dt, time, k_now);
       }
         
       // hot-gas stripping of satellites
@@ -422,13 +422,13 @@ void evolve_galaxies(int halonr, int ngal)	// note: halonr is here the FOF-backg
       // Check for disk instability
       if(DiskInstabilityOn>0)
       {
-          double metallicity;
-          for(i=0; i<N_BINS; i++)
-          {
-            metallicity = get_metallicity(Gal[p].DiscGas[i], Gal[p].DiscGasMetals[i]);
-            assert(Gal[p].DiscGasMetals[i] <= Gal[p].DiscGas[i]);
-          }
-        check_disk_instability(p, centralgal, dt, step, time);
+//          double metallicity;
+//          for(i=0; i<N_BINS; i++)
+//          {
+//            metallicity = get_metallicity(Gal[p].DiscGas[i], Gal[p].DiscGasMetals[i]);
+//            assert(Gal[p].DiscGasMetals[i] <= Gal[p].DiscGas[i]);
+//          }
+        check_disk_instability(p, centralgal, dt, step, time, k_now);
       }
     }
 
@@ -469,7 +469,8 @@ void evolve_galaxies(int halonr, int ngal)	// note: halonr is here the FOF-backg
           else
           {
             time = Age[Gal[p].SnapNum] - (step + 0.5) * dt;
-            deal_with_galaxy_merger(p, merger_centralgal, centralgal, time, dt, step);
+            k_now = get_stellar_age_bin_index(time);
+            deal_with_galaxy_merger(p, merger_centralgal, centralgal, time, dt, step, k_now);
           }
  
         }

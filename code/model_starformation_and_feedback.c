@@ -189,7 +189,7 @@ void starformation_and_feedback(int p, int centralgal, double dt, int step, doub
       assert(reheated_mass==reheated_mass && reheated_mass!=INFINITY);
       assert(Gal[p].MetalsHotGas>=0);
       if(reheated_mass > 0.0)
-        update_from_feedback(p, centralgal, reheated_mass, metallicity, i, ejected_cold_mass);
+        update_from_feedback(p, centralgal, reheated_mass, metallicity, i, ejected_cold_mass, time, k_now);
 
       if(!(fabs(Gal[p].ColdGas-ColdPre) <= 1.01*fabs(Gal[p].DiscGas[i]-DiscPre) && fabs(Gal[p].ColdGas-ColdPre) >= 0.999*fabs(Gal[p].DiscGas[i]-DiscPre) && (Gal[p].ColdGas-ColdPre)*(Gal[p].DiscGas[i]-DiscPre)>=0.0))
           printf("fabs(Gal[p].ColdGas-ColdPre), fabs(Gal[p].DiscGas[i]-DiscPre) = %e, %e\n", fabs(Gal[p].ColdGas-ColdPre), fabs(Gal[p].DiscGas[i]-DiscPre));
@@ -198,7 +198,7 @@ void starformation_and_feedback(int p, int centralgal, double dt, int step, doub
 
   }
 
-  update_from_ejection(p, centralgal, ejected_sum);
+  update_from_ejection(p, centralgal, ejected_sum, time, k_now);
     
   double NewStarSum = 0.0;
   for(i=N_BINS-1; i>=0; i--) NewStarSum += NewStars[i];
@@ -438,7 +438,7 @@ void update_from_star_formation(int p, double stars, double metallicity, int i)
 
 
 
-void update_from_feedback(int p, int centralgal, double reheated_mass, double metallicity, int i, double ejected_cold_mass)
+void update_from_feedback(int p, int centralgal, double reheated_mass, double metallicity, int i, double ejected_cold_mass, double time, int k_now)
 {
     assert(Gal[centralgal].MetalsHotGas <= Gal[centralgal].HotGas);
     assert(Gal[p].HotGas>=0);
@@ -469,13 +469,13 @@ void update_from_feedback(int p, int centralgal, double reheated_mass, double me
 
     if(HeatedToCentral)
     {
-      if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, ejected_cold_mass);
+      if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, ejected_cold_mass, time, k_now, metallicity);
       Gal[centralgal].HotGas += reheated_mass;
       Gal[centralgal].EjectedMass += ejected_cold_mass;
     }
     else
     {
-      if(ReincorpotationModel>=3) update_reincorporation_time(p, ejected_cold_mass);
+      if(ReincorpotationModel>=3) update_reincorporation_time(p, ejected_cold_mass, time, k_now, metallicity);
       Gal[p].HotGas += reheated_mass;
       Gal[p].EjectedMass += ejected_cold_mass;
     }
@@ -548,23 +548,22 @@ void update_from_feedback(int p, int centralgal, double reheated_mass, double me
 }
 
 
-void update_from_ejection(int p, int centralgal, double ejected_mass)
-{
-    double metallicityHot;
-    
+void update_from_ejection(int p, int centralgal, double ejected_mass, double time, int k_now)
+{    
     assert(Gal[centralgal].EjectedMass >= Gal[centralgal].MetalsEjectedMass);
     assert(Gal[p].EjectedMass >= Gal[p].MetalsEjectedMass);
     assert(Gal[p].HotGas>=0);
     assert(Gal[p].MetalsHotGas>=0);
+    
+    double metallicityHot = get_metallicity(Gal[p].HotGas, Gal[p].MetalsHotGas);
 
     if(HeatedToCentral)
     {
-    	metallicityHot = get_metallicity(Gal[p].HotGas, Gal[p].MetalsHotGas);
     	assert(Gal[p].MetalsHotGas <= Gal[p].HotGas);
     
         if(ejected_mass >= Gal[p].HotGas)
         {
-            if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, Gal[p].HotGas);
+            if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, Gal[p].HotGas, time, k_now, metallicityHot);
             Gal[centralgal].EjectedMass += Gal[p].HotGas;
             Gal[p].HotGas = 0.0;
             Gal[centralgal].MetalsEjectedMass += Gal[p].MetalsHotGas;
@@ -572,7 +571,7 @@ void update_from_ejection(int p, int centralgal, double ejected_mass)
         }
         else if(ejected_mass>0 && Gal[p].HotGas>0.0)
     	{
-            if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, ejected_mass);
+            if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, ejected_mass, time, k_now, metallicityHot);
             Gal[p].HotGas -= ejected_mass;
             Gal[centralgal].EjectedMass += ejected_mass;
             Gal[p].MetalsHotGas -= metallicityHot * ejected_mass;
@@ -585,7 +584,7 @@ void update_from_ejection(int p, int centralgal, double ejected_mass)
     {
         if(ejected_mass >= Gal[p].HotGas)
         {
-            if(ReincorpotationModel>=3) update_reincorporation_time(p, Gal[p].HotGas);
+            if(ReincorpotationModel>=3) update_reincorporation_time(p, Gal[p].HotGas, time, k_now, metallicityHot);
             Gal[p].EjectedMass += Gal[p].HotGas;
             Gal[p].MetalsEjectedMass += Gal[p].MetalsHotGas;
             Gal[p].HotGas = 0.0;
@@ -593,8 +592,7 @@ void update_from_ejection(int p, int centralgal, double ejected_mass)
         }
         else if(ejected_mass>0 && Gal[p].HotGas>0)
         {
-            if(ReincorpotationModel>=3) update_reincorporation_time(p, ejected_mass);
-            metallicityHot = get_metallicity(Gal[p].HotGas, Gal[p].MetalsHotGas);
+            if(ReincorpotationModel>=3) update_reincorporation_time(p, ejected_mass, time, k_now, metallicityHot);
             Gal[p].EjectedMass += ejected_mass;
             Gal[p].MetalsEjectedMass += ejected_mass * metallicityHot;
             Gal[p].HotGas -= ejected_mass;
@@ -1480,7 +1478,7 @@ void delayed_feedback(int p, int k_now, int centralgal, double time, double dt)
         metallicity = get_metallicity(Gal[p].DiscGas[i], Gal[p].DiscGasMetals[i]);
         
         assert(Gal[p].MetalsHotGas>=0);
-        update_from_feedback(p, centralgal, reheated_mass, metallicity, i, ejected_cold_mass);
+        update_from_feedback(p, centralgal, reheated_mass, metallicity, i, ejected_cold_mass, time, k_now);
         
         // excess energy that goes into gas ejection from this annulus
         excess_energy = energy_feedback - reheat_specific_energy * reheated_mass - eject_specific_energy * ejected_cold_mass;
@@ -1489,9 +1487,9 @@ void delayed_feedback(int p, int k_now, int centralgal, double time, double dt)
     }
     
     if(ejected_sum < Gal[centralgal].HotGas)
-        update_from_ejection(p, centralgal, ejected_sum);
+        update_from_ejection(p, centralgal, ejected_sum, time, k_now);
     else
-        update_from_ejection(p, centralgal, Gal[centralgal].HotGas);
+        update_from_ejection(p, centralgal, Gal[centralgal].HotGas, time, k_now);
         
     update_stellar_dispersion(p);
 }

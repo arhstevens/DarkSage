@@ -364,6 +364,9 @@ struct GALAXY
     double EjectedQuasarGasMass;
     double MaxStrippedGas;
     
+    double EjectedMass_Reinc[N_AGE_BINS+1];
+    double MetalsEjectedMass_Reinc[N_AGE_BINS+1];
+    
   // Instability tracking
   int TotInstabEvents;
   int TotInstabEventsGas;
