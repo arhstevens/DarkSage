@@ -38,7 +38,7 @@ void starformation_and_feedback(int p, int centralgal, double dt, int step, doub
 void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_ratio, double *disc_mass_ratio, double *PostRetroGas);
 void init_galaxy(int p, int halonr);
 double infall_recipe(int centralgal, int ngal, double Zcurr);
-void add_infall_to_hot(int centralgal, double infallingGas);
+void add_infall_to_hot(int centralgal, double infallingGas, int k_now);
 double cooling_recipe(int centralgal, double dt);
 void cool_gas_onto_galaxy(int p, double coolingGas);
 void reincorporate_gas(int centralgal, double dt, double time, int k_now);

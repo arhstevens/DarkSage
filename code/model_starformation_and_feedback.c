@@ -448,6 +448,8 @@ void update_from_feedback(int p, int centralgal, double reheated_mass, double me
     assert(ejected_cold_mass>=0);
     
     double reheat_eject_sum = reheated_mass + ejected_cold_mass;
+    double eject_sum = 0.0;
+    int kk;
 
   if(SupernovaRecipeOn>0 && reheat_eject_sum>MIN_STARFORMATION) // Imposing a minimum. Chosen as MIN_STARFORMATION for convenience.  Makes sense to be same order of magnitude though.
   {
@@ -467,11 +469,17 @@ void update_from_feedback(int p, int centralgal, double reheated_mass, double me
         Gal[p].DiscGas[i] = 0.0;
     }
 
-    if(HeatedToCentral)
+      if(HeatedToCentral)
     {
       if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, ejected_cold_mass, time, k_now, metallicity);
       Gal[centralgal].HotGas += reheated_mass;
       Gal[centralgal].EjectedMass += ejected_cold_mass;
+        
+        eject_sum = 0.0;
+        for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+        if (!((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass))) printf("eject_sum, Gal[centralgal].EjectedMass, ejected_cold_mass = %e, %e, %e\n", eject_sum, Gal[centralgal].EjectedMass, ejected_cold_mass);
+        assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
     }
     else
     {
@@ -555,6 +563,9 @@ void update_from_ejection(int p, int centralgal, double ejected_mass, double tim
     assert(Gal[p].HotGas>=0);
     assert(Gal[p].MetalsHotGas>=0);
     
+    double eject_sum = 0.0;
+    int kk;
+    
     double metallicityHot = get_metallicity(Gal[p].HotGas, Gal[p].MetalsHotGas);
 
     if(HeatedToCentral)
@@ -568,6 +579,11 @@ void update_from_ejection(int p, int centralgal, double ejected_mass, double tim
             Gal[p].HotGas = 0.0;
             Gal[centralgal].MetalsEjectedMass += Gal[p].MetalsHotGas;
             Gal[p].MetalsHotGas = 0.0;
+            
+            eject_sum = 0.0;
+            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
         }
         else if(ejected_mass>0 && Gal[p].HotGas>0.0)
     	{
@@ -576,6 +592,11 @@ void update_from_ejection(int p, int centralgal, double ejected_mass, double tim
             Gal[centralgal].EjectedMass += ejected_mass;
             Gal[p].MetalsHotGas -= metallicityHot * ejected_mass;
             Gal[centralgal].MetalsEjectedMass += metallicityHot * ejected_mass;
+            
+            eject_sum = 0.0;
+            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
     	}
 
     	assert(Gal[centralgal].MetalsHotGas <= Gal[centralgal].HotGas);
@@ -589,6 +610,11 @@ void update_from_ejection(int p, int centralgal, double ejected_mass, double tim
             Gal[p].MetalsEjectedMass += Gal[p].MetalsHotGas;
             Gal[p].HotGas = 0.0;
             Gal[p].MetalsHotGas = 0.0;
+            
+            eject_sum = 0.0;
+            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
         }
         else if(ejected_mass>0 && Gal[p].HotGas>0)
         {
@@ -597,6 +623,11 @@ void update_from_ejection(int p, int centralgal, double ejected_mass, double tim
             Gal[p].MetalsEjectedMass += ejected_mass * metallicityHot;
             Gal[p].HotGas -= ejected_mass;
             Gal[p].MetalsHotGas -= ejected_mass * metallicityHot;
+            
+            eject_sum = 0.0;
+            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
         }
         
     }

@@ -278,6 +278,8 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
         ejected_specific_energy = Gal[p].EjectedPotential + hot_thermal_and_kinetic;
     }
   
+    double eject_sum = 0.0;
+    int kk;
 	for(k=0; k<N_BINS; k++)
 	{
         if(Gal[p].DiscGas[k]==0.0) continue;
@@ -304,6 +306,10 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
                 if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, Gal[p].DiscGas[k], time, k_now, metallicity);
                 Gal[centralgal].EjectedMass += Gal[p].DiscGas[k];
                 Gal[centralgal].MetalsEjectedMass += Gal[p].DiscGasMetals[k];
+                
+                eject_sum = 0.0;
+                for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+                assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
             }
             else
             {
@@ -336,6 +342,11 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
                 if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, ejected_mass, time, k_now, metallicity);
                 Gal[centralgal].EjectedMass += ejected_mass;
                 Gal[centralgal].MetalsEjectedMass += ejected_metals;
+                
+                eject_sum = 0.0;
+                for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+                assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
             }
             else
             {
@@ -373,6 +384,11 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
             if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, Gal[p].HotGas, time, k_now, metallicity);
             Gal[centralgal].EjectedMass += Gal[p].HotGas;
             Gal[centralgal].MetalsEjectedMass += Gal[p].MetalsHotGas;
+            
+            eject_sum = 0.0;
+            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
         }
         else
         {
