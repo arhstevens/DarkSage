@@ -521,6 +521,7 @@ extern int    AgeStructOut;
 extern int    DelayedFeedbackOn;
 extern int    HotGasProfileType;
 extern int    MergeTimeScaleForm;
+extern int    MetalMixing;
 
 // recipe parameters 
 extern double RecycleFraction;

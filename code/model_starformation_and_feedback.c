@@ -448,8 +448,13 @@ void update_from_feedback(int p, int centralgal, double reheated_mass, double me
     assert(ejected_cold_mass>=0);
     
     double reheat_eject_sum = reheated_mass + ejected_cold_mass;
-    double eject_sum = 0.0;
-    int kk;
+    int pp, kk;
+    double eject_sum=0.0;
+    
+    if(HeatedToCentral)
+        pp = centralgal;
+    else
+        pp = p;
 
   if(SupernovaRecipeOn>0 && reheat_eject_sum>MIN_STARFORMATION) // Imposing a minimum. Chosen as MIN_STARFORMATION for convenience.  Makes sense to be same order of magnitude though.
   {
@@ -469,63 +474,82 @@ void update_from_feedback(int p, int centralgal, double reheated_mass, double me
         Gal[p].DiscGas[i] = 0.0;
     }
 
-      if(HeatedToCentral)
-    {
-      if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, ejected_cold_mass, time, k_now, metallicity);
-      Gal[centralgal].HotGas += reheated_mass;
-      Gal[centralgal].EjectedMass += ejected_cold_mass;
-        
-        eject_sum = 0.0;
-        for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
-        if (!((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass))) printf("eject_sum, Gal[centralgal].EjectedMass, ejected_cold_mass = %e, %e, %e\n", eject_sum, Gal[centralgal].EjectedMass, ejected_cold_mass);
-        assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
-
-    }
-    else
-    {
-      if(ReincorpotationModel>=3) update_reincorporation_time(p, ejected_cold_mass, time, k_now, metallicity);
-      Gal[p].HotGas += reheated_mass;
-      Gal[p].EjectedMass += ejected_cold_mass;
-    }
-
+    Gal[pp].HotGas += reheated_mass;
+    Gal[pp].EjectedMass += ejected_cold_mass;
 
 	if(Gal[p].DiscGas[i]>0.0)
 	{
 	  Gal[p].MetalsColdGas -= metallicity * reheat_eject_sum;
       Gal[p].DiscGasMetals[i] -= metallicity * reheat_eject_sum;
-      if(HeatedToCentral)
+
+      Gal[pp].MetalsHotGas += metallicity * reheated_mass;
+      if((MetalMixing) && (Gal[pp].HotGas>0.0))
       {
-        Gal[centralgal].MetalsHotGas += metallicity * reheated_mass;
-        Gal[centralgal].MetalsEjectedMass += metallicity * ejected_cold_mass;
+        Gal[pp].HotGas += metallicity * ejected_cold_mass; // need to add mass to the total reservoir too incase it's insignificant to the metals being added
+        Gal[pp].MetalsHotGas += metallicity * ejected_cold_mass;
+        metallicity = get_metallicity(Gal[pp].HotGas, Gal[pp].MetalsHotGas);
+        Gal[pp].MetalsEjectedMass += metallicity * ejected_cold_mass;
+        Gal[pp].HotGas -= metallicity * ejected_cold_mass;
+        Gal[pp].MetalsHotGas -= metallicity * ejected_cold_mass;
+          
+        if(Gal[pp].HotGas < 0.0) Gal[pp].HotGas = Gal[pp].MetalsHotGas = 0.0;
+        if(Gal[pp].MetalsHotGas < 0.0) Gal[pp].MetalsHotGas = 0.0;
       }
       else
-      {
-        Gal[p].MetalsHotGas += metallicity * reheated_mass;
-        Gal[p].MetalsEjectedMass += metallicity * ejected_cold_mass;
-      }
+        Gal[pp].MetalsEjectedMass += metallicity * ejected_cold_mass;
+        
+
+
         
 	  assert(Gal[p].DiscGasMetals[i]<=Gal[p].DiscGas[i]);
+        
+        if(!(Gal[pp].MetalsHotGas <= Gal[pp].HotGas)) printf("Gal[pp].MetalsHotGas, Gal[pp].HotGas = %e, %e\n", Gal[pp].MetalsHotGas, Gal[pp].HotGas);
+        assert(Gal[pp].MetalsHotGas <= Gal[pp].HotGas);
+
 	}
 	else
 	{
-      if(HeatedToCentral)
+      if((MetalMixing) && (Gal[pp].HotGas>0.0))
       {
-        Gal[centralgal].MetalsHotGas += Gal[p].DiscGasMetals[i] * reheated_mass/reheat_eject_sum;
-        Gal[centralgal].MetalsEjectedMass += Gal[p].DiscGasMetals[i] * ejected_cold_mass/reheat_eject_sum;
+        Gal[pp].HotGas += Gal[p].DiscGasMetals[i];
+        Gal[pp].MetalsHotGas += Gal[p].DiscGasMetals[i];
+        metallicity = get_metallicity(Gal[pp].HotGas, Gal[pp].MetalsHotGas);
+        Gal[pp].MetalsEjectedMass += metallicity * ejected_cold_mass;
+        Gal[pp].HotGas -= metallicity * ejected_cold_mass;
+        Gal[pp].MetalsHotGas -= metallicity * ejected_cold_mass;
+          
+        if(Gal[pp].HotGas < 0.0) Gal[pp].HotGas = Gal[pp].MetalsHotGas = 0.0;
+        if(Gal[pp].MetalsHotGas < 0.0) Gal[pp].MetalsHotGas = 0.0;
       }
       else
       {
-        Gal[p].MetalsHotGas += Gal[p].DiscGasMetals[i] * reheated_mass/reheat_eject_sum;;
-        Gal[p].MetalsEjectedMass += Gal[p].DiscGasMetals[i] * ejected_cold_mass/reheat_eject_sum;
+        Gal[pp].MetalsHotGas += Gal[p].DiscGasMetals[i] * reheated_mass/reheat_eject_sum;
+        Gal[pp].MetalsEjectedMass += Gal[p].DiscGasMetals[i] * ejected_cold_mass/reheat_eject_sum;
       }
+
         
       Gal[p].MetalsColdGas -= Gal[p].DiscGasMetals[i];
       Gal[p].DiscGasMetals[i] = 0.0;
+        
+        if(!(Gal[pp].MetalsHotGas <= Gal[pp].HotGas)) printf("Gal[pp].MetalsHotGas, Gal[pp].HotGas = %e, %e\n", Gal[pp].MetalsHotGas, Gal[pp].HotGas);
+        assert(Gal[pp].MetalsHotGas <= Gal[pp].HotGas);
+
     }
+      
+      if(ReincorpotationModel>=3) update_reincorporation_time(pp, ejected_cold_mass, time, k_now, metallicity);
+        
+        eject_sum = 0.0;
+        for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[pp].EjectedMass_Reinc[kk];
+        if(!((eject_sum <= 1.01 * Gal[pp].EjectedMass) && (eject_sum >= 0.99 * Gal[pp].EjectedMass))) 
+        {
+            printf("eject_sum, Gal[pp].EjectedMass = %e, %e\n", eject_sum, Gal[pp].EjectedMass);
+            printf("eject_metals_sum, Gal[pp].MetalsEjectedMass = %e, %e\n", eject_sum, Gal[pp].EjectedMass);
+            printf("ejected_cold_mass, metallicity = %e, %e\n", ejected_cold_mass, metallicity);
+        }
+        assert((eject_sum <= 1.01 * Gal[pp].EjectedMass) && (eject_sum >= 0.99 * Gal[pp].EjectedMass));
+
   }
 
-    if(!(Gal[centralgal].MetalsHotGas <= Gal[centralgal].HotGas)) printf("Gal[centralgal].MetalsHotGas, Gal[centralgal].HotGas = %e, %e\n", Gal[centralgal].MetalsHotGas, Gal[centralgal].HotGas);
-  assert(Gal[centralgal].MetalsHotGas <= Gal[centralgal].HotGas);
 
   if(Gal[p].DiscGas[i] <= 0.0)
   {
@@ -587,6 +611,10 @@ void update_from_ejection(int p, int centralgal, double ejected_mass, double tim
         }
         else if(ejected_mass>0 && Gal[p].HotGas>0.0)
     	{
+            eject_sum = 0.0;
+            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
             if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, ejected_mass, time, k_now, metallicityHot);
             Gal[p].HotGas -= ejected_mass;
             Gal[centralgal].EjectedMass += ejected_mass;

@@ -249,7 +249,14 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
 { // I should probably out through the centralgal ID here
     double quasar_energy, DiscGasSum, metallicity;
     double annulus_radius, annulus_velocity, cold_specific_energy, ejected_specific_energy, satellite_specific_energy, j_hot, hot_thermal_and_kinetic, hot_specific_energy, ejected_mass, ejected_metals, Delta_specific_energy, vertical_velocity;
-    int k;
+    int k, pp, kk;
+    double eject_sum=0.0;
+    
+    if(HeatedToCentral)
+        pp = centralgal;
+    else
+        pp = p;
+
 
     // checks -- are these still necessary?
     check_ejected(p);
@@ -265,7 +272,7 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
     hot_thermal_and_kinetic = 0.5 * (sqr(Gal[p].Vvir) + sqr(j_hot)/Gal[p].R2_hot_av);
     hot_specific_energy = Gal[p].HotGasPotential + hot_thermal_and_kinetic; // only interested in the hot reservoir of the galaxy that has the feedback for this prescription.  No gas is being heated into it, only potentially ejected out of it.
 
-    if(HeatedToCentral>0)
+    if((HeatedToCentral>0) && (p!=centralgal))
     {
         satellite_specific_energy = get_satellite_potential(p, centralgal);
         j_hot = 2 * Gal[centralgal].Vvir * Gal[centralgal].CoolScaleRadius;
@@ -277,9 +284,7 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
     {
         ejected_specific_energy = Gal[p].EjectedPotential + hot_thermal_and_kinetic;
     }
-  
-    double eject_sum = 0.0;
-    int kk;
+
 	for(k=0; k<N_BINS; k++)
 	{
         if(Gal[p].DiscGas[k]==0.0) continue;
@@ -301,22 +306,28 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
         
         if(ejected_mass>=Gal[p].DiscGas[k]) 
         {
-            if(HeatedToCentral)
+            Gal[pp].EjectedMass += Gal[p].DiscGas[k];
+            if((MetalMixing) && (Gal[pp].HotGas>0.0))
             {
-                if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, Gal[p].DiscGas[k], time, k_now, metallicity);
-                Gal[centralgal].EjectedMass += Gal[p].DiscGas[k];
-                Gal[centralgal].MetalsEjectedMass += Gal[p].DiscGasMetals[k];
+                Gal[pp].HotGas += Gal[p].DiscGasMetals[k];
+                Gal[pp].MetalsHotGas += Gal[p].DiscGasMetals[k];
+                metallicity = get_metallicity(Gal[pp].HotGas, Gal[pp].MetalsHotGas);
+                Gal[pp].MetalsEjectedMass += metallicity * Gal[p].DiscGas[k];
+                Gal[pp].HotGas -= metallicity * Gal[p].DiscGas[k];
+                Gal[pp].MetalsHotGas -= metallicity * Gal[p].DiscGas[k];
                 
-                eject_sum = 0.0;
-                for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
-                assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+                if(Gal[pp].HotGas < 0.0) Gal[pp].HotGas = Gal[pp].MetalsHotGas = 0.0;
+                if(Gal[pp].MetalsHotGas < 0.0) Gal[pp].MetalsHotGas = 0.0;
             }
             else
-            {
-                if(ReincorpotationModel>=3) update_reincorporation_time(p, Gal[p].DiscGas[k], time, k_now, metallicity);
-                Gal[p].EjectedMass += Gal[p].DiscGas[k];
-                Gal[p].MetalsEjectedMass += Gal[p].DiscGasMetals[k];
-            }
+                Gal[pp].MetalsEjectedMass += Gal[p].DiscGasMetals[k];
+            
+            if(ReincorpotationModel>=3) update_reincorporation_time(pp, Gal[p].DiscGas[k], time, k_now, metallicity);
+            
+            eject_sum = 0.0;
+            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
             
             if(k<N_BINS-1)
             {
@@ -335,25 +346,30 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
         }
         else
         {
-            ejected_metals = ejected_mass * Gal[p].DiscGasMetals[k] / Gal[p].DiscGas[k];
+            ejected_metals = ejected_mass * get_metallicity(Gal[p].DiscGas[k], Gal[p].DiscGasMetals[k]);
             
-            if(HeatedToCentral)
+            Gal[pp].EjectedMass += ejected_mass;
+            
+            if((MetalMixing) && (Gal[pp].HotGas>0.0))
             {
-                if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, ejected_mass, time, k_now, metallicity);
-                Gal[centralgal].EjectedMass += ejected_mass;
-                Gal[centralgal].MetalsEjectedMass += ejected_metals;
+                Gal[pp].HotGas += ejected_metals;
+                Gal[pp].MetalsHotGas += ejected_metals;
+                metallicity = get_metallicity(Gal[pp].HotGas, Gal[pp].MetalsHotGas);
+                Gal[pp].MetalsEjectedMass += metallicity * ejected_mass;
+                Gal[pp].HotGas -= metallicity * ejected_mass;
+                Gal[pp].MetalsHotGas -= metallicity * ejected_mass;
                 
-                eject_sum = 0.0;
-                for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
-                assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
-
+                if(Gal[pp].HotGas < 0.0) Gal[pp].HotGas = Gal[pp].MetalsHotGas = 0.0;
+                if(Gal[pp].MetalsHotGas < 0.0) Gal[pp].MetalsHotGas = 0.0;
             }
             else
-            {
-                if(ReincorpotationModel>=3) update_reincorporation_time(p, ejected_mass, time, k_now, metallicity);
-                Gal[p].EjectedMass += ejected_mass;
-                Gal[p].MetalsEjectedMass += ejected_metals;
-            }
+                Gal[pp].MetalsEjectedMass += ejected_metals;
+            if(ReincorpotationModel>=3) update_reincorporation_time(pp, ejected_mass, time, k_now, metallicity);
+            
+            eject_sum = 0.0;
+            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
             
             Gal[p].ColdGas -= ejected_mass;
             Gal[p].MetalsColdGas -= ejected_metals;
@@ -379,23 +395,15 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
 
     if(ejected_mass>=Gal[p].HotGas || Delta_specific_energy<=0)
     { // eject the entire hot reservoir
-        if(HeatedToCentral)
-        {
-            if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, Gal[p].HotGas, time, k_now, metallicity);
-            Gal[centralgal].EjectedMass += Gal[p].HotGas;
-            Gal[centralgal].MetalsEjectedMass += Gal[p].MetalsHotGas;
-            
-            eject_sum = 0.0;
-            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
-            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
 
-        }
-        else
-        {
-            if(ReincorpotationModel>=3) update_reincorporation_time(p, Gal[p].HotGas, time, k_now, metallicity);
-            Gal[p].EjectedMass += Gal[p].HotGas;
-            Gal[p].MetalsEjectedMass += Gal[p].MetalsHotGas;
-        }
+        if(ReincorpotationModel>=3) update_reincorporation_time(pp, Gal[p].HotGas, time, k_now, metallicity);
+        Gal[pp].EjectedMass += Gal[p].HotGas;
+        Gal[pp].MetalsEjectedMass += Gal[p].MetalsHotGas;
+        
+        eject_sum = 0.0;
+        for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+        assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
      
         Gal[p].HotGas = 0.0;
         Gal[p].MetalsHotGas = 0.0;
@@ -403,19 +411,15 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
     else if(ejected_mass>0 && Gal[p].HotGas>0)
     {
         ejected_metals = ejected_mass * Gal[p].MetalsHotGas / Gal[p].HotGas;
+
+        if(ReincorpotationModel>=3) update_reincorporation_time(pp, ejected_mass, time, k_now, metallicity);
+        Gal[pp].EjectedMass += ejected_mass;
+        Gal[pp].MetalsEjectedMass += ejected_metals;
         
-        if(HeatedToCentral)
-        {
-            if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, ejected_mass, time, k_now, metallicity);
-            Gal[centralgal].EjectedMass += ejected_mass;
-            Gal[centralgal].MetalsEjectedMass += ejected_metals;
-        }
-        else
-        {
-            if(ReincorpotationModel>=3) update_reincorporation_time(p, ejected_mass, time, k_now, metallicity);
-            Gal[p].EjectedMass += ejected_mass;
-            Gal[p].MetalsEjectedMass += ejected_metals;
-        }
+        eject_sum = 0.0;
+        for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+        assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+
         
         Gal[p].HotGas -= ejected_mass;
         Gal[p].MetalsHotGas -= ejected_metals;

@@ -262,6 +262,7 @@ double get_metallicity(double gas, double metals)
     if(gas > 0.0 && metals > 0.0)
     {
         metallicity = metals / gas;
+        
         if(metallicity < 1.0)
             return dmax(metallicity, BIG_BANG_METALLICITY);
         else

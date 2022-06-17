@@ -266,6 +266,7 @@ void cool_gas_onto_galaxy(int p, double coolingGas)
 	coolingGasBinSum = 0.0;
 	metallicity = get_metallicity(Gal[p].HotGas, Gal[p].MetalsHotGas);
 	assert(Gal[p].MetalsHotGas <= Gal[p].HotGas);
+    assert(Gal[p].MetalsHotGas >= 0);
 	
 	// Get ang mom of cooling gas in its native orientation
 	J_cool = 2.0 * coolingGas * Gal[p].Vvir * Gal[p].CoolScaleRadius;
@@ -406,8 +407,7 @@ void cool_gas_onto_galaxy(int p, double coolingGas)
       Gal[p].HotGas -= coolingGas;
       Gal[p].MetalsHotGas -= metallicity * coolingGas;
         
-        if(!(Gal[p].MetalsHotGas >= 0)) printf("Hot Gas, Metals = %e, %e\n", Gal[p].HotGas, Gal[p].MetalsHotGas);
-        assert(Gal[p].MetalsHotGas >= 0);
+      if(Gal[p].MetalsHotGas < 0.0) Gal[p].MetalsHotGas = 0.0; // can happen if gas is fully pristine.  But why would that happen...?
 
     }
     else

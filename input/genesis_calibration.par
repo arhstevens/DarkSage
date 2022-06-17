@@ -3,7 +3,7 @@
 %------------------------------------------
 
 FileNameGalaxies       model
-OutputDir               /Users/adam/DarkSage_runs/Genesis/L75n324/38/
+OutputDir               /Users/adam/DarkSage_runs/Genesis/L75n324/39/
 
 FirstFile                   0
 LastFile                    7
@@ -61,6 +61,7 @@ AgeStructOut                1       ;Include age structure in output (0 for no, 
 DelayedFeedbackOn           1       ; Abandon the instantaneous recycling approximation and use the age bins to impose a semi-instantaneous, semi-delayed feedback and metal enrichment treatment (requires N_AGE_BINS to be non-zero, ideally >20).  1 for on, 0 for off.
 HotGasProfileType           1       ;0: Hot gas assumed to follow a singular isothermal sphere;  1: Hot gas assumed to follow a beta profile of the form described in Stevens et al. (2017)
 MergeTimeScaleForm          1       ;0: Based on Binney & Tremaine (1987); 1: Based on Poulton et al. (2021)
+MetalMixing                 1       ;0: directly ejected gas from the ISM carries its metals with it; 1: metals mix with the CGM before ejection
 
 
 %----------------------------------------------------------

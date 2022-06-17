@@ -70,6 +70,7 @@ int AgeStructOut;
 int DelayedFeedbackOn;
 int HotGasProfileType;
 int MergeTimeScaleForm;
+int MetalMixing;
 
 // binning information
 double FirstBin;

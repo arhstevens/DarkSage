@@ -177,6 +177,10 @@ void read_parameter_file(char *fname)
   addr[nt] = &MergeTimeScaleForm;
   id[nt++] = INT;
     
+  strcpy(tag[nt], "MetalMixing");
+  addr[nt] = &MetalMixing;
+  id[nt++] = INT;   
+    
   strcpy(tag[nt], "BaryonFrac");
   addr[nt] = &BaryonFrac;
   id[nt++] = DOUBLE;
