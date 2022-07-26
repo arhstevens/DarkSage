@@ -11,15 +11,16 @@ warnings.filterwarnings("ignore")
 
 
 ###### USER NEEDS TO SET THESE THINGS ######
-#indir = '/Users/adam/DarkSage_runs/571r/' # directory where the Dark Sage data are
-indir = '/Users/adam/DarkSage_runs/Genesis/L75n324/36/'
-sim = 4 # which simulation Dark Sage has been run on -- if it's new, you will need to set its defaults below.
+indir = '/Users/adam/DarkSage_runs/TNG300/2/' # directory where the Dark Sage data are
+#indir = '/Users/adam/DarkSage_runs/Genesis/L75n324/39/'
+sim = 6 # which simulation Dark Sage has been run on -- if it's new, you will need to set its defaults below.
 #   0 = Mini Millennium, 1 = Full Millennium, 2 = SMDPL, 3 = Genesis-Millennium, 4=Genesis-Calibration, 5 = MDPL2
 
 Nannuli = 30 # number of annuli used for discs in Dark Sage
 Nage = 30 # number of age bins used for stars -- not advised to use a run with this for calibration
 #age_alist_file = '/Users/adam/millennium_mini/millennium.a_list' # File with expansion factors used for age bins
-age_alist_file = '/Users/adam/Genesis_calibration_trees/L75n324/alist.txt'
+#age_alist_file = '/Users/adam/Genesis_calibration_trees/L75n324/alist.txt'
+age_alist_file = '/Users/adam/Illustris/alist_TNG.txt'
 RecycleFraction = 0.43 # Only needed for comparing stellar-age based SFR with raw SFR
 ###### ============================== ######
 
@@ -82,7 +83,12 @@ elif sim==4:
 elif sim==5:
     h = 0.6777
     vol = (1000.0/h)**3 * len(filenumbers)/1000.
-# add here 'elif sim==6:' etc for a new simulation
+elif sim==6:
+    h = 0.6774
+    vol = (205.0/h)**3 * len(filenumbers)/128.
+    Omega_M = 0.3089
+    Omega_L = 0.6911
+# add here 'elif sim==7:' etc for a new simulation
 else:
     print('Please specify a valid simulation.  You may need to add its defaults to this code.')
     quit()

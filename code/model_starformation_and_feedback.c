@@ -1151,7 +1151,7 @@ void update_HI_H2(int p)
     double area, f_H2, f_H2_HI, Pressure, f_sigma;
     int i;
     double angle = acos(Gal[p].SpinStars[0]*Gal[p].SpinGas[0] + Gal[p].SpinStars[1]*Gal[p].SpinGas[1] + Gal[p].SpinStars[2]*Gal[p].SpinGas[2])*180.0/M_PI;
-    double galaxy_ion_term, sigma_gas, full_ratio;
+    double galaxy_ion_term, sigma_gas, full_ratio, interrim;
     double s, Zp, chi, c_f, Sigma_comp0, Tau_c;
     double X_H, Z, f_neutral, Y_He;
     
@@ -1167,7 +1167,14 @@ void update_HI_H2(int p)
             area = M_PI * (sqr(Gal[p].DiscRadii[i+1]) - sqr(Gal[p].DiscRadii[i]));
             Z = get_metallicity(Gal[p].DiscGas[i], Gal[p].DiscGasMetals[i]);
             
-            if(Gal[p].DiscGas[i]<=0.0) continue;
+            if(Gal[p].DiscGas[i]<=MIN_STARFORMATION) // imposing a reasonable minimum to avoid silly ratios triggering the code to crash 
+            {
+                Gal[p].DiscGas[i] = 0.0;
+                Gal[p].DiscGasMetals[i] = 0.0;
+                Gal[p].DiscHI[i] = 0.0;
+                Gal[p].DiscH2[i] = 0.0;
+                continue;
+            }
             assert(Gal[p].DiscGas[i]>0.0);
             
             if(H2prescription==1 || H2prescription==2)
@@ -1226,9 +1233,19 @@ void update_HI_H2(int p)
                 f_H2 = X_H / (1.0/f_H2_HI + 1);
                 full_ratio = galaxy_ion_term * f_H2 * sqr(area / (X_H * Gal[p].DiscGas[i])) * 0.25*(3*X_H+1);
                 
-                f_neutral = 0.5 * (full_ratio + 2.0 - sqrt(full_ratio*(full_ratio+4.0)));
+                interrim = full_ratio - sqrt(full_ratio*(full_ratio+4.0)); // order of operations for the computer can matter
+                f_neutral = 0.5 * (2.0 + interrim);
+//                if(f_neutral>1.0) f_neutral = 1.0; 
                 Gal[p].DiscH2[i] = f_H2 * f_neutral * Gal[p].DiscGas[i];
                 Gal[p].DiscHI[i] = Gal[p].DiscH2[i] / f_H2_HI;
+                
+                if(!(Gal[p].DiscHI[i] + Gal[p].DiscH2[i] <= X_H*Gal[p].DiscGas[i]))
+                {
+                    printf("Gal[p].DiscHI[i], Gal[p].DiscH2[i], Gal[p].DiscGas[i], X_H*Gal[p].DiscGas[i]  = %e, %e, %e, %e\n", Gal[p].DiscHI[i], Gal[p].DiscH2[i], Gal[p].DiscGas[i], X_H*Gal[p].DiscGas[i]);
+                    printf("f_neutral, X_H, f_H2_HI = %e, %e, %e\n", f_neutral, X_H, f_H2_HI);
+                    printf("f_H2, full_ratio = %e, %e\n", f_H2, full_ratio);
+                }
+                assert(Gal[p].DiscHI[i] + Gal[p].DiscH2[i] <= X_H*Gal[p].DiscGas[i]);
             }
             else
             {
@@ -1237,6 +1254,16 @@ void update_HI_H2(int p)
             }
             
             
+        }
+    }
+    else if (Gal[p].ColdGas <= 0.0)
+    {
+        for(i=0; i<N_BINS; i++)
+        {
+            Gal[p].DiscGas[i] = 0.0;
+            Gal[p].DiscGasMetals[i] = 0.0;
+            Gal[p].DiscHI[i] = 0.0;
+            Gal[p].DiscH2[i] = 0.0;
         }
     }
 }
