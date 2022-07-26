@@ -442,6 +442,8 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
 	assert(DiscGasSum <= 1.01*Gal[p].ColdGas && DiscGasSum >= Gal[p].ColdGas/1.01);
 	
 	assert(Gal[t].ColdGas >= Gal[t].MetalsColdGas);
+    if(Gal[t].StellarMass <= 0.0) Gal[t].StellarMass = Gal[t].MetalsStellarMass = 0.0;
+    if(!(Gal[t].StellarMass >= Gal[t].MetalsStellarMass)) printf("Gal[t].StellarMass, Gal[t].MetalsStellarMass = %e, %e\n", Gal[t].StellarMass, Gal[t].MetalsStellarMass);
 	assert(Gal[t].StellarMass >= Gal[t].MetalsStellarMass);
 	
 	for(i=0; i<N_BINS; i++) 

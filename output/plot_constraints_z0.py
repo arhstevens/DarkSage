@@ -12,10 +12,10 @@ warnings.filterwarnings("ignore")
 
 
 ###### USER NEEDS TO SET THESE THINGS ######
-#indir = '/Users/adam/DarkSage_runs/571j/' # directory where the Dark Sage data are
-indir = '/Users/adam/DarkSage_runs/Genesis/L75n324/36/'
-sim = 4 # which simulation Dark Sage has been run on -- if it's new, you will need to set its defaults below.
-#   0 = Mini Millennium, 1 = Full Millennium, 2 = SMDPL, 3 = Genesis-Millennium, 4=Genesis-Calibration, 5 = MDPL2
+indir = '/Users/adam/DarkSage_runs/TNG300/1/' # directory where the Dark Sage data are
+#indir = '/Users/adam/DarkSage_runs/Genesis/L75n324/39/'
+sim = 6 # which simulation Dark Sage has been run on -- if it's new, you will need to set its defaults below.
+#   0 = Mini Millennium, 1 = Full Millennium, 2 = SMDPL, 3 = Genesis-Millennium, 4=Genesis-Calibration, 5 = MDPL2, 6 = TNG300
 
 fpre = 'model_z0.000' # what is the prefix name of the z=0 files
 files = range(8) # list of file numbers you want to read
@@ -52,6 +52,11 @@ elif sim==5:
     h = 0.6777
     Lbox = 1000.0/h * (len(files)/1000.)**(1./3)
 # add here 'elif sim==6:' etc for a new simulation
+elif sim==6:
+    h = 0.6774
+    Lbox = 205.0/h * (len(files)/128.)**(1./3)
+    Omega = 0.3089
+    OmegaLambda = 0.6911
 else:
     print('Please specify a valid simulation.  You may need to add its defaults to this code.')
     quit()

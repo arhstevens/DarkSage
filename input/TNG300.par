@@ -1,0 +1,163 @@
+%------------------------------------------
+%----- Output file information ------------
+%------------------------------------------
+
+FileNameGalaxies       model
+OutputDir               /Users/adam/DarkSage_runs/TNG300/1/
+
+FirstFile                   0
+LastFile                    7
+
+
+%------------------------------------------
+%----- Snapshot output list ---------------
+%------------------------------------------
+
+NumOutputs        1   ; sets the desired number of galaxy outputs; use -1 for all outputs
+
+% List your output snapshots after the arrow, highest to lowest (ignored when NumOutputs=-1).
+-> 99
+
+
+%------------------------------------------
+%----- Simulation information  ------------
+%------------------------------------------
+
+TreeName                        trees_sf1_lhalo_binary_099_relabel        ; assumes the trees are named TreeName.n where n is the snapshot number
+SimulationDir               /Users/adam/TNG300_trees/
+FileWithSnapList            /Users/adam/Illustris/alist_TNG.txt
+LastSnapShotNr                99
+
+Omega                0.3089
+OmegaLambda            0.6911
+BaryonFrac            0.1573
+Hubble_h            0.6774
+
+PartMass        0.0047418
+BoxLen          205.0
+
+
+%------------------------------------------
+%----- Code options -----------------------
+%------------------------------------------
+
+SFprescription              0        ;0: proportional to H2; 1: as 0 but all gas for low H2 fraction a la Fu et al 2010; 2: Threshold cold mass (closest to SAGE implementation)
+H2prescription              0       ;0: mid-plane pressure; 1: metallicity-dependent (McKee & Krumholz 2010); 2: max H2 of 0 and 1
+AGNrecipeOn                 2        ;0: switch off; 1: empirical model; 2: Bondi-Hoyle model; 3: cold cloud accretion model
+SupernovaRecipeOn           3        ;0: switch off; 1: scale with local density; 2: uniform reheated fraction; 3: energy-based local feedback; 4: energy-based distributive feedback
+ReionizationOn              1        ;0: switch off
+DiskInstabilityOn           1        ;0: switch off; 1: unstable mass moves through disc; 2: inner unstable stars straight to bulge
+GasPrecessionOn             1       ;0: switch off; 1: gas discs will precess to naturally come in line with stellar discs
+RamPressureOn               3       ;0: switch off; 1: cold gas is stripped in satellites' annuli immediately; 2: stripped gradually; 3: combination of 1 and tidal stripping
+HotStripOn                  1       ;0: switch off; 1: hot gas is gradually transferred from satellites to centrals; 2: strip all hot gas of satellites instantly; 3: ram pressure on the hot gas; 4: max of 1 and 3
+HeatedToCentral             1       ;0: gas heated from feedback goes to hot reservoir of same galaxy; 1: goes to central's reservoir
+ReincorpotationModel        5       ;0: based on Vvir (same as SAGE); 1: based on Mvir (Henriques et al 2013); 2: proportional to change in hot gas potential; 3: acceleration timescale from Rvir to Rhot; 4: constant-velocity timescale from Rvir to Rhot; 5: time bins used to reincorporate gradually from each feedback episode
+CoolingExponentialRadiusOn  0       ;0: cooling gas is exponential with j (original model); 1: exponential with radius instead
+MvirDefinition              2       ;Mass definition in the treefiles used for Mvir (default for Millennium should be 2, i.e. M200c)
+AgeStructOut                1       ;Include age structure in output (0 for no, 1 for yes). WARNING: Slows code and increases size of output significantly!! Recommended for a single snapshot only.
+DelayedFeedbackOn           1       ; Abandon the instantaneous recycling approximation and use the age bins to impose a semi-instantaneous, semi-delayed feedback and metal enrichment treatment (requires N_AGE_BINS to be non-zero, ideally >20).  1 for on, 0 for off.
+HotGasProfileType           1       ;0: Hot gas assumed to follow a singular isothermal sphere;  1: Hot gas assumed to follow a beta profile of the form described in Stevens et al. (2017)
+MergeTimeScaleForm          1       ;0: Based on Binney & Tremaine (1987); 1: Based on Poulton et al. (2021)
+MetalMixing                 0       ;0: directly ejected gas from the ISM carries its metals with it; 1: metals mix with the CGM before ejection
+
+
+%----------------------------------------------------------
+%-- HARD CODED PARAMETERS, MUST RUN compile.py TO UPDATE --
+%----------------------------------------------------------
+
+% Unlike other parameters in this file, these ones need the '%' at the front
+%N_BINS                  30  ; Number of j bins used in discs (see below for setting structure of bins)
+%N_AGE_BINS              30  ; Number of age bins used for stars in output (when AgeStructOut=1) and internally for stellar evolution
+
+
+%------------------------------------------
+%------ Set the j bins for discs ----------
+%------------------------------------------
+
+FirstBin                    1.0     ; Measured in kpc/h km/s
+ExponentBin                 1.4     ; The factor in spec ang mom between bins
+
+
+%------------------------------------------
+%----- Parameters of physical model -------
+%------------------------------------------
+
+
+%%%= TRUE FREE PARAMETERS =%%%
+RadiativeEfficiency         0.1
+GasSinkRate                 0.9
+%%%= ==================== =%%%
+
+
+
+SfrEfficiency               1.0
+
+%%%= For SupernovaRecipeOn=1 =%%%
+FeedbackReheatingEpsilon    4.3567
+FeedbackGasSigma            2.8865     ; For SupernovaRecipeOn=1, scales SN feedback based on this density scale [h Msun/pc^2]
+FeedbackExponent            1.0    ; Exponent for scaled SN feedback (SupernovaRecipeOn=1)
+FeedbackEjectionEfficiency  0.71841983
+%%%= ======================= =%%%
+
+
+
+%%%= For SupernovaRecipeOn=3or4 =%%%
+FeedbackReheatCoupling      1.0     ; very similar to FeedbackReheatingEpsilon but designated a different name for the sake of switching between feedback modes when the best-fit parameters are not identical
+FeedbackEjectCoupling       1.0
+Ratio_Ia_II                 0.2     ; number ratio of Type Ia (binary accretion) to Type II (core collapse) supernovae. Affects the total number of supernovae (and therefore total feedback energy) per unit mass of stars formed.
+%%%= ========================== =%%%
+
+
+ReIncorporationFactor        0.15    ; For ReincorpotationModel=0. Reincorporation turned off when both = 0.
+
+CoolingScaleSlope           0.23    ; cf. eq. 18 of Stevens et al. (2017)
+CoolingScaleConst           1.26
+
+RadioModeEfficiency         1.0
+QuasarModeEfficiency        1.0
+BlackHoleGrowthRate         0.0     ; RETIRED, was for specific BH growth during mergers 
+
+
+%%%= For H2prescription=0 =%%%
+H2FractionFactor            1.0    ;Controls the normalisation of the H2/HI calculation. (1/h^2 for Fu+10)
+H2FractionExponent          0.92   ;Also controls the H2/HI ratio calculation. (0.92 for Fu+10).
+%%%= ==================== =%%%
+
+
+%%%= For H2prescription=1 =%%%
+ClumpFactor                 1.0     ; Controls the clump factor which affects H2/HI. (1.0 for Fu+13)
+ClumpExponent               0.7     ; Controls the clump factor which affects H2/HI. (0.7 for Fu+13)
+%%%= ==================== =%%%
+
+
+QTotMin                     1.0    ;threshold Toomre Q value for instabilities
+ThetaThresh                 10.0   ;threshold angle for gas and stellar discs to be coplanar
+
+DegPerTdyn                  5.0    ;degrees the gas disc precesses to come in line with stars per dynamical time
+
+ThreshMajorMerger            0.1        ;major merger when mass ratio greater than this
+ThresholdSatDisruption        2.0        ;Mvir-to-baryonic mass ratio threshold for satellite merger or disruption
+
+AlphaBurst                  0.0     ; RETIRED, normalisation of fraction of gas consumed in a merger starburst
+BetaBurst                   0.0    ; RETIRED, exponent of gas consumed in a merger starburst. Setting to 0 turns off merger starbursts
+
+Yield                        0.02908
+RecycleFraction                0.43    ;fraction of SF mass instantaneously recycled back to cold, for DelayedFeedbackOn=0
+FracZleaveDisk                0.0        ;fraction of metals produced directly to hot component
+
+Reionization_z0                8.0        ;these parameter choices give the best fit to Genedin (2000)...
+Reionization_zr                7.0        ;using the analytic fit of Kravtsov et al. 2004 (ReionizationOn=1)
+
+
+EnergySN                    1.0e51    ;energy per supernova
+EtaSN                        5.0e-3    ;supernova efficiency
+
+
+%------------------------------------------
+%----- Cosmological parameters and more ---
+%------------------------------------------
+
+UnitLength_in_cm            3.08568e+24        ;WATCH OUT: Mpc/h
+UnitMass_in_g                1.989e+43        ;WATCH OUT: 10^10Msun/h
+UnitVelocity_in_cm_per_s    100000            ;WATCH OUT: km/s
+

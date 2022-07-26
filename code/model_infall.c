@@ -125,16 +125,37 @@ double infall_recipe(int centralgal, int ngal, double Zcurr)
     assert(Gal[centralgal].MetalsLocalIGM>=0);
     
     // Local intergalactic stars also only associated with central, as it is a property of the FoF
-    Gal[centralgal].LocalIGS = tot_IGS;
-    Gal[centralgal].MetalsLocalIGS = tot_IGSMetals;
+    if(tot_IGS < MIN_STARFORMATION) 
+    {
+        Gal[centralgal].LocalIGS = Gal[centralgal].MetalsLocalIGS = 0.0;
+        for(k=k_now; k<N_AGE_BINS; k++) Gal[centralgal].LocalIGS_Age[k] = Gal[centralgal].MetalsLocalIGS_Age[k] = 0.0;
+    }
+    else
+    {
+        Gal[centralgal].LocalIGS = tot_IGS;
+        
+        if(tot_IGSMetals < MIN_STARFORMATION * BIG_BANG_METALLICITY) 
+            Gal[centralgal].MetalsLocalIGS = 0.0;
+        else
+            Gal[centralgal].MetalsLocalIGS = tot_IGSMetals;
+    }
+
+
+    
+    
+
+    
     if(!(Gal[centralgal].LocalIGS >= 0 && Gal[centralgal].MetalsLocalIGS >= 0)) printf("LocalIGS, Metals = %e, %e\n", Gal[centralgal].LocalIGS, Gal[centralgal].MetalsLocalIGS);
     assert(Gal[centralgal].LocalIGS >= 0);
     assert(Gal[centralgal].MetalsLocalIGS >= 0);
 
-    if(AgeStructOut>0)
+    if(AgeStructOut>0 && Gal[centralgal].LocalIGS>0.0)
     {
       for(k=k_now; k<N_AGE_BINS; k++)
       {
+          if(Gal[centralgal].LocalIGS_Age[k] < MIN_STARFORMATION) Gal[centralgal].LocalIGS_Age[k] = Gal[centralgal].MetalsLocalIGS_Age[k] = 0.0;
+          if(Gal[centralgal].MetalsLocalIGS_Age[k] < MIN_STARFORMATION * BIG_BANG_METALLICITY) Gal[centralgal].MetalsLocalIGS_Age[k] = 0.0;
+          
           Gal[centralgal].LocalIGS_Age[k] = tot_IGS_Age[k];
           Gal[centralgal].MetalsLocalIGS_Age[k] = tot_IGSMetals_Age[k];
       }
