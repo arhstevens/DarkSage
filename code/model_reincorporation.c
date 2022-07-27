@@ -168,9 +168,8 @@ void update_reincorporation_time(int p, double new_ejected_mass, double time, in
     {
         // find the age bin that corresponds to ReincTimeFresh in the future
         int k=0;
-        for(k=k_now; k<=N_AGE_BINS; k++)
+        for(k=k_now; k<N_AGE_BINS; k++)
         {
-            if(k==N_AGE_BINS) break;
             if(Gal[p].ReincTimeFresh <= time - AgeBinEdge[k+1]) break;
         }
         Gal[p].EjectedMass_Reinc[k] += new_ejected_mass;

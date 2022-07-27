@@ -967,10 +967,10 @@ void update_disc_radii(int p)
                 }
                 Gal[p].ReincTimeFresh = reincTime;
             }
-            else if(ReincorpotationModel==5)
-            {
-                
-            }
+//            else if(ReincorpotationModel==5)
+//            {
+//                
+//            }
             
             
             gsl_spline_free (spline);

@@ -117,9 +117,13 @@ void deal_with_galaxy_merger(int p, int merger_centralgal, int centralgal, doubl
 
   add_galaxies_together(merger_centralgal, p, centralgal, k_now, mass_ratio, disc_mass_ratio, PostRetroGas);
     
+    for(i=0; i<N_BINS; i++)
+    {
+        metallicity = get_metallicity(Gal[merger_centralgal].DiscGas[i], Gal[merger_centralgal].DiscGasMetals[i]);
+        assert(Gal[merger_centralgal].DiscGasMetals[i] <= Gal[merger_centralgal].DiscGas[i]);
+        assert(disc_mass_ratio[i] <= 1.0 && disc_mass_ratio[i]>=0.0);
+    }
   
-  for(i=0; i<N_BINS; i++) assert(disc_mass_ratio[i] <= 1.0 && disc_mass_ratio[i]>=0.0);
-
   if(BetaBurst>0.0) // deprecated for new default model
     collisional_starburst_recipe(disc_mass_ratio, merger_centralgal, centralgal, dt, 0, step, k_now, time);
 
@@ -448,6 +452,7 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
 	
 	for(i=0; i<N_BINS; i++) 
 	{
+        assert(Gal[t].DiscGasMetals[i] <= Gal[t].DiscGas[i]);
 		assert(Gal[t].DiscStarsMetals[i] <= Gal[t].DiscStars[i]);
         assert(disc_mass_ratio[i]==0.0);
 	}
@@ -703,13 +708,14 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
                     j_seg = sqrt( sqr(NewSpin[0]*jvec[0]) + sqr(NewSpin[1]*jvec[1]) + sqr(NewSpin[2]*jvec[2]) ); // only accounts for component parallel to the new gas disc plane
                     
                     // find the annulus of the new disc that j_seg corresponds to
-                    for(k=1; k<=N_BINS; k++)
+                    for(k=1; k<N_BINS; k++)
                     {
                         if(j_seg < DiscBinEdge[k]) break;
                     }
                     k -= 1;
                     NewDisc[k] += Gal[gal].DiscGas[i] * seg_frac;
                     NewDiscMetals[k] += Gal[gal].DiscGasMetals[i] * seg_frac;
+                    assert(NewDiscMetals[k] <= NewDisc[k]);
                     
                     // check if projection was prograde or retrograde
                     if(NewSpin[0]*jvec[0] + NewSpin[1]*jvec[1] + NewSpin[2]*jvec[2] > 0.0)
@@ -744,7 +750,6 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
             
       msig2_sum += (Gal[p].StellarMass * sqr(dCOM_p[0]*dvCOM_p[0] + dCOM_p[1]*dvCOM_p[1] + dCOM_p[2]*dvCOM_p[2]) / (sqr(dCOM_p[0]) + sqr(dCOM_p[1]) + sqr(dCOM_p[2])) );
       msig2_sum += (Gal[t].StellarMass * sqr(dCOM_t[0]*dvCOM_t[0] + dCOM_t[1]*dvCOM_t[1] + dCOM_t[2]*dvCOM_t[2]) / (sqr(dCOM_t[0]) + sqr(dCOM_t[1]) + sqr(dCOM_t[2])) );
-      
   }
     
   // update term used to calculate merger-driven bulge's velocity dispersion
@@ -833,6 +838,8 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
     if(disc_mass_ratio[i] > 1.0)
       disc_mass_ratio[i] = 1.0/disc_mass_ratio[i];
     assert(disc_mass_ratio[i]<=1.0 && disc_mass_ratio[i]>=0.0);
+      assert(Gal[t].DiscGasMetals[i] <= Gal[t].DiscGas[i]);
+      assert(Gal[t].DiscStarsMetals[i] <= Gal[t].DiscStars[i]);
   }
 }
 
