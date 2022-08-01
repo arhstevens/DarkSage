@@ -436,7 +436,7 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
 void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_ratio, double *disc_mass_ratio, double *PostRetroGas)
 {
   int step, i, s, k;
-  double DiscGasSum, CentralGasOrig, ExpFac, dPos[3], dVel[3], pos_mag, radial_velocity;
+  double DiscGasSum, CentralGasOrig, ExpFac, dPos[3], dVel[3], pos_mag, radial_velocity, j_denom, j_sat_disc;
     ExpFac = AA[Gal[t].SnapNum]; // Expansion factor needed for determining physical distances for calculating j
     
 	CentralGasOrig = get_disc_gas(t);
@@ -574,14 +574,19 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
     else
         for(i=0; i<N_BINS; i++) PostRetroGas[i] = Gal[t].DiscGas[i];
       
+
+      
     // update specific angular momentum of merger-driven bulge
+    j_sat_disc = get_disc_ang_mom(p,1);
+    j_denom = Gal[t].ClassicalBulgeMass + Gal[p].StellarMass + Gal[p].ICS;
     for(s=0; s<3; s++)
     {        
-        Gal[t].SpinClassicalBulge[s] = (Gal[t].ClassicalBulgeMass*Gal[t].SpinClassicalBulge[s] + Gal[p].ClassicalBulgeMass*Gal[p].SpinClassicalBulge[s] + get_disc_ang_mom(p,1)*Gal[p].SpinStars[s]) / (Gal[t].ClassicalBulgeMass + Gal[p].StellarMass);
+        Gal[t].SpinClassicalBulge[s] = (Gal[t].ClassicalBulgeMass*Gal[t].SpinClassicalBulge[s] + Gal[p].ClassicalBulgeMass*Gal[p].SpinClassicalBulge[s] + j_sat_disc*Gal[p].SpinStars[s]) / j_denom;
         
     }
+      
       radial_velocity = (dVel[0]*dPos[0] + dVel[1]*dPos[1] + dVel[2]*dPos[2]) / pos_mag ;
-      msig2_sum += (Gal[p].StellarMass * sqr(radial_velocity));
+      msig2_sum += ((Gal[p].StellarMass + Gal[p].ICS) * sqr(radial_velocity));
       
   }
   else // Major mergers -- a more complex treatment of the gas could be done in future versions
@@ -758,6 +763,22 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
   msig2_sum += (Gal[p].SecularBulgeMass * sqr(Gal[p].VelDispBulge));
   for(i=0; i<N_BINS; i++) msig2_sum += (Gal[p].DiscStars[i] * sqr(Gal[p].VelDispStars[i]));
 
+    
+  // Deciding to add any remaining ICS of the satellite (which would be stripped down) to the merger-driven bulge for a minor merger
+  // Same for intrahalo black holes
+  if(mass_ratio<ThreshMajorMerger)
+  {
+      Gal[t].ClassicalBulgeMass += Gal[p].ICS;
+      Gal[t].ClassicalMetalsBulgeMass += Gal[p].MetalsICS;
+      Gal[t].BlackHoleMass += Gal[p].ICBHmass;
+  }
+  else
+  {
+      Gal[t].ICS += Gal[p].ICS;
+      Gal[t].MetalsICS += Gal[p].MetalsICS;
+      Gal[t].ICBHnum += Gal[p].ICBHnum;
+      Gal[t].ICBHmass += Gal[p].ICBHmass;
+  }
 
   Gal[t].StarsFromH2 += Gal[p].StarsFromH2;
   Gal[t].StarsInstability += Gal[p].StarsInstability;
@@ -775,9 +796,6 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
   Gal[t].MetalsStarsExSitu += Gal[p].MetalsStellarMass;
     
   Gal[t].VelDispMergerBulge = sqrt(msig2_sum / Gal[t].ClassicalBulgeMass);
-
-  Gal[t].ICS += Gal[p].ICS;
-  Gal[t].MetalsICS += Gal[p].MetalsICS;
 
   // If accounting for age, need to deposit all the smaller galaxies' stars into the right age bins for the classical bulge  
   if(AgeStructOut>0)
@@ -802,8 +820,17 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
 
           }
           
-          Gal[t].ICS_Age[k] += Gal[p].ICS_Age[k];
-          Gal[t].MetalsICS_Age[k] += Gal[p].MetalsICS_Age[k];
+          
+          if(mass_ratio<ThreshMajorMerger)
+          {
+              Gal[t].ClassicalBulgeMassAge[k] += Gal[p].ICS_Age[k];
+              Gal[t].ClassicalMetalsBulgeMassAge[k] += Gal[p].MetalsICS_Age[k];
+          }
+          else
+          {
+              Gal[t].ICS_Age[k] += Gal[p].ICS_Age[k];
+              Gal[t].MetalsICS_Age[k] += Gal[p].MetalsICS_Age[k];
+          }
       }
   }
 
@@ -818,8 +845,8 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
   Gal[t].BlackHoleMass += Gal[p].BlackHoleMass;
   assert(Gal[t].BlackHoleMass>=0.0);
     
-  Gal[t].ICBHnum += Gal[p].ICBHnum;
-  Gal[t].ICBHmass += Gal[p].ICBHmass;
+    // would it make more sense to assume the ICBHs of the satellite make it into the progenitor galaxy for a minor merger?
+
   
 
   for(step = 0; step < STEPS; step++)
