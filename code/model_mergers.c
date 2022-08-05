@@ -436,7 +436,7 @@ void quasar_mode_wind(int p, float BHaccrete, int centralgal, double time, int k
 void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_ratio, double *disc_mass_ratio, double *PostRetroGas)
 {
   int step, i, s, k;
-  double DiscGasSum, CentralGasOrig, ExpFac, dPos[3], dVel[3], pos_mag, radial_velocity, j_denom, j_sat_disc;
+  double DiscGasSum, CentralGasOrig, ExpFac, dPos[3], dVel[3], pos_mag, radial_velocity, m_sum, J_sat_disc;
     ExpFac = AA[Gal[t].SnapNum]; // Expansion factor needed for determining physical distances for calculating j
     
 	CentralGasOrig = get_disc_gas(t);
@@ -577,11 +577,11 @@ void add_galaxies_together(int t, int p, int centralgal, int k_now, double mass_
 
       
     // update specific angular momentum of merger-driven bulge
-    j_sat_disc = get_disc_ang_mom(p,1);
-    j_denom = Gal[t].ClassicalBulgeMass + Gal[p].StellarMass + Gal[p].ICS;
+    J_sat_disc = get_disc_ang_mom(p,1);
+    m_sum = Gal[t].ClassicalBulgeMass + Gal[p].StellarMass + Gal[p].ICS;
     for(s=0; s<3; s++)
     {        
-        Gal[t].SpinClassicalBulge[s] = (Gal[t].ClassicalBulgeMass*Gal[t].SpinClassicalBulge[s] + Gal[p].ClassicalBulgeMass*Gal[p].SpinClassicalBulge[s] + j_sat_disc*Gal[p].SpinStars[s]) / j_denom;
+        Gal[t].SpinClassicalBulge[s] = (Gal[t].ClassicalBulgeMass*Gal[t].SpinClassicalBulge[s] + Gal[p].ClassicalBulgeMass*Gal[p].SpinClassicalBulge[s] + J_sat_disc*Gal[p].SpinStars[s]) / m_sum;
         
     }
       
