@@ -3,7 +3,7 @@
 %------------------------------------------
 
 FileNameGalaxies       model
-OutputDir               /Users/adam/DarkSage_runs/TNG300/1/
+OutputDir               /Users/adam/DarkSage_runs/TNG300/3/
 
 FirstFile                   0
 LastFile                    7
@@ -50,7 +50,7 @@ DiskInstabilityOn           1        ;0: switch off; 1: unstable mass moves thro
 GasPrecessionOn             1       ;0: switch off; 1: gas discs will precess to naturally come in line with stellar discs
 RamPressureOn               3       ;0: switch off; 1: cold gas is stripped in satellites' annuli immediately; 2: stripped gradually; 3: combination of 1 and tidal stripping
 HotStripOn                  1       ;0: switch off; 1: hot gas is gradually transferred from satellites to centrals; 2: strip all hot gas of satellites instantly; 3: ram pressure on the hot gas; 4: max of 1 and 3
-HeatedToCentral             1       ;0: gas heated from feedback goes to hot reservoir of same galaxy; 1: goes to central's reservoir
+HeatedToCentral             0       ;0: gas heated from feedback goes to hot reservoir of same galaxy; 1: goes to central's reservoir
 ReincorpotationModel        5       ;0: based on Vvir (same as SAGE); 1: based on Mvir (Henriques et al 2013); 2: proportional to change in hot gas potential; 3: acceleration timescale from Rvir to Rhot; 4: constant-velocity timescale from Rvir to Rhot; 5: time bins used to reincorporate gradually from each feedback episode
 CoolingExponentialRadiusOn  0       ;0: cooling gas is exponential with j (original model); 1: exponential with radius instead
 MvirDefinition              2       ;Mass definition in the treefiles used for Mvir (default for Millennium should be 2, i.e. M200c)

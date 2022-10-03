@@ -525,6 +525,7 @@ double deal_with_unstable_gas(double unstable_gas, int p, int i, double metallic
         j_hot = 2 * Gal[centralgal].Vvir * Gal[centralgal].CoolScaleRadius;
         hot_thermal_and_kinetic = 0.5 * (sqr(Gal[centralgal].Vvir) + sqr(j_hot)/Gal[centralgal].R2_hot_av);
         hot_specific_energy = Gal[centralgal].HotGasPotential + hot_thermal_and_kinetic - satellite_specific_energy;
+        ejected_specific_energy = Gal[centralgal].EjectedPotential + hot_thermal_and_kinetic - satellite_specific_energy;
     }
     else
     {
@@ -532,8 +533,8 @@ double deal_with_unstable_gas(double unstable_gas, int p, int i, double metallic
         j_hot = 2 * Gal[p].Vvir * Gal[p].CoolScaleRadius;
         hot_thermal_and_kinetic = 0.5 * (sqr(Gal[p].Vvir) + sqr(j_hot)/Gal[p].R2_hot_av);
         hot_specific_energy = Gal[p].HotGasPotential + hot_thermal_and_kinetic;
+        ejected_specific_energy = Gal[p].EjectedPotential + hot_thermal_and_kinetic;
     }
-    ejected_specific_energy = Gal[centralgal].EjectedPotential + hot_thermal_and_kinetic - satellite_specific_energy;
 
   
 	// Let gas sink -- one may well want to change this formula

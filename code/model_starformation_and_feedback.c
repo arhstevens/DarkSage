@@ -31,6 +31,7 @@ void starformation_and_feedback(int p, int centralgal, double dt, int step, doub
       j_hot = 2 * Gal[centralgal].Vvir * Gal[centralgal].CoolScaleRadius;
       hot_thermal_and_kinetic = 0.5 * (sqr(Gal[centralgal].Vvir) + sqr(j_hot)/Gal[centralgal].R2_hot_av);
       hot_specific_energy = Gal[centralgal].HotGasPotential + hot_thermal_and_kinetic - satellite_specific_energy;
+      ejected_specific_energy = Gal[centralgal].EjectedPotential + hot_thermal_and_kinetic - satellite_specific_energy;
   }
   else
   {
@@ -38,8 +39,8 @@ void starformation_and_feedback(int p, int centralgal, double dt, int step, doub
       j_hot = 2 * Gal[p].Vvir * Gal[p].CoolScaleRadius;
       hot_thermal_and_kinetic = 0.5 * (sqr(Gal[p].Vvir) + sqr(j_hot)/Gal[p].R2_hot_av);
       hot_specific_energy = Gal[p].HotGasPotential + hot_thermal_and_kinetic;
+      ejected_specific_energy = Gal[p].EjectedPotential + hot_thermal_and_kinetic;
   }
-  ejected_specific_energy = Gal[centralgal].EjectedPotential + hot_thermal_and_kinetic - satellite_specific_energy;
 
   double StarsPre = Gal[p].StellarMass;
   check_channel_stars(p);
@@ -451,6 +452,12 @@ void update_from_feedback(int p, int centralgal, double reheated_mass, double me
     int pp, kk;
     double eject_sum=0.0;
     
+    double Rsat;
+    if(p != centralgal)
+        Rsat = get_satellite_radius(p, centralgal); // should return 0 if a central
+    else
+        Rsat = 1.1 * Gal[centralgal].Rvir; // set to ensure the reincorporation time is properly done -- not to be taken as a literal assignment
+    
     if(HeatedToCentral)
         pp = centralgal;
     else
@@ -536,17 +543,17 @@ void update_from_feedback(int p, int centralgal, double reheated_mass, double me
 
     }
       
-      if(ReincorpotationModel>=3) update_reincorporation_time(pp, ejected_cold_mass, time, k_now, metallicity);
+      if((ReincorpotationModel>=3) && (Rsat>Gal[centralgal].Rvir)) update_reincorporation_time(pp, ejected_cold_mass, time, k_now, metallicity);
         
-        eject_sum = 0.0;
-        for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[pp].EjectedMass_Reinc[kk];
-        if(!((eject_sum <= 1.01 * Gal[pp].EjectedMass) && (eject_sum >= 0.99 * Gal[pp].EjectedMass))) 
-        {
-            printf("eject_sum, Gal[pp].EjectedMass = %e, %e\n", eject_sum, Gal[pp].EjectedMass);
-            printf("eject_metals_sum, Gal[pp].MetalsEjectedMass = %e, %e\n", eject_sum, Gal[pp].EjectedMass);
-            printf("ejected_cold_mass, metallicity = %e, %e\n", ejected_cold_mass, metallicity);
-        }
-        assert((eject_sum <= 1.01 * Gal[pp].EjectedMass) && (eject_sum >= 0.99 * Gal[pp].EjectedMass));
+//        eject_sum = 0.0;
+//        for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[pp].EjectedMass_Reinc[kk];
+//        if(!((eject_sum <= 1.01 * Gal[pp].EjectedMass) && (eject_sum >= 0.99 * Gal[pp].EjectedMass))) 
+//        {
+//            printf("eject_sum, Gal[pp].EjectedMass = %e, %e\n", eject_sum, Gal[pp].EjectedMass);
+//            printf("eject_metals_sum, Gal[pp].MetalsEjectedMass = %e, %e\n", eject_sum, Gal[pp].EjectedMass);
+//            printf("ejected_cold_mass, metallicity = %e, %e\n", ejected_cold_mass, metallicity);
+//        }
+//        assert((eject_sum <= 1.01 * Gal[pp].EjectedMass) && (eject_sum >= 0.99 * Gal[pp].EjectedMass));
 
   }
 
@@ -576,6 +583,16 @@ void update_from_feedback(int p, int centralgal, double reheated_mass, double me
     
     assert(Gal[p].HotGas>=0);
     assert(Gal[p].MetalsHotGas>=0);
+    
+    
+    // if a satellite and HeatedToCentral is not on, still need to account for the fact that the ejected reservoir is meant to be zero for satellites inside the virial radius
+    if( (p!=centralgal) && (HeatedToCentral==0) && (Rsat <= Gal[centralgal].Rvir))
+    {
+            Gal[centralgal].HotGas += Gal[p].EjectedMass;
+            Gal[centralgal].MetalsHotGas += Gal[p].MetalsEjectedMass;
+            Gal[p].EjectedMass = 0.0;
+            Gal[p].MetalsEjectedMass = 0.0;
+    }
 
 }
 
@@ -590,6 +607,12 @@ void update_from_ejection(int p, int centralgal, double ejected_mass, double tim
     double eject_sum = 0.0;
     int kk;
     
+    double Rsat;
+    if(p != centralgal)
+        Rsat = get_satellite_radius(p, centralgal); // should return 0 if a central
+    else
+        Rsat = 1.1 * Gal[centralgal].Rvir; // set to ensure the reincorporation time is properly done -- not to be taken as a literal assignment
+    
     double metallicityHot = get_metallicity(Gal[p].HotGas, Gal[p].MetalsHotGas);
 
     if(HeatedToCentral)
@@ -598,15 +621,15 @@ void update_from_ejection(int p, int centralgal, double ejected_mass, double tim
     
         if(ejected_mass >= Gal[p].HotGas)
         {
-            if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, Gal[p].HotGas, time, k_now, metallicityHot);
+            if((ReincorpotationModel>=3) && (Rsat>Gal[centralgal].Rvir)) update_reincorporation_time(centralgal, Gal[p].HotGas, time, k_now, metallicityHot);
             Gal[centralgal].EjectedMass += Gal[p].HotGas;
             Gal[p].HotGas = 0.0;
             Gal[centralgal].MetalsEjectedMass += Gal[p].MetalsHotGas;
             Gal[p].MetalsHotGas = 0.0;
             
-            eject_sum = 0.0;
-            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
-            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+//            eject_sum = 0.0;
+//            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+//            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
 
         }
         else if(ejected_mass>0 && Gal[p].HotGas>0.0)
@@ -615,15 +638,15 @@ void update_from_ejection(int p, int centralgal, double ejected_mass, double tim
             for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
             assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
 
-            if(ReincorpotationModel>=3) update_reincorporation_time(centralgal, ejected_mass, time, k_now, metallicityHot);
+            if((ReincorpotationModel>=3) && (Rsat>Gal[centralgal].Rvir)) update_reincorporation_time(centralgal, ejected_mass, time, k_now, metallicityHot);
             Gal[p].HotGas -= ejected_mass;
             Gal[centralgal].EjectedMass += ejected_mass;
             Gal[p].MetalsHotGas -= metallicityHot * ejected_mass;
             Gal[centralgal].MetalsEjectedMass += metallicityHot * ejected_mass;
             
-            eject_sum = 0.0;
-            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
-            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+//            eject_sum = 0.0;
+//            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+//            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
 
     	}
 
@@ -633,28 +656,28 @@ void update_from_ejection(int p, int centralgal, double ejected_mass, double tim
     {
         if(ejected_mass >= Gal[p].HotGas)
         {
-            if(ReincorpotationModel>=3) update_reincorporation_time(p, Gal[p].HotGas, time, k_now, metallicityHot);
+            if((ReincorpotationModel>=3) && (Rsat>Gal[centralgal].Rvir)) update_reincorporation_time(p, Gal[p].HotGas, time, k_now, metallicityHot);
             Gal[p].EjectedMass += Gal[p].HotGas;
             Gal[p].MetalsEjectedMass += Gal[p].MetalsHotGas;
             Gal[p].HotGas = 0.0;
             Gal[p].MetalsHotGas = 0.0;
             
-            eject_sum = 0.0;
-            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
-            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+//            eject_sum = 0.0;
+//            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+//            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
 
         }
         else if(ejected_mass>0 && Gal[p].HotGas>0)
         {
-            if(ReincorpotationModel>=3) update_reincorporation_time(p, ejected_mass, time, k_now, metallicityHot);
+            if((ReincorpotationModel>=3) && (Rsat>Gal[centralgal].Rvir)) update_reincorporation_time(p, ejected_mass, time, k_now, metallicityHot);
             Gal[p].EjectedMass += ejected_mass;
             Gal[p].MetalsEjectedMass += ejected_mass * metallicityHot;
             Gal[p].HotGas -= ejected_mass;
             Gal[p].MetalsHotGas -= ejected_mass * metallicityHot;
             
-            eject_sum = 0.0;
-            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
-            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
+//            eject_sum = 0.0;
+//            for(kk=0; kk<=N_AGE_BINS; kk++) eject_sum += Gal[centralgal].EjectedMass_Reinc[kk];
+//            assert((eject_sum <= 1.01 * Gal[centralgal].EjectedMass) && (eject_sum >= 0.99 * Gal[centralgal].EjectedMass));
 
         }
         
@@ -664,6 +687,20 @@ void update_from_ejection(int p, int centralgal, double ejected_mass, double tim
     assert(Gal[p].EjectedMass >= Gal[p].MetalsEjectedMass);
     assert(Gal[p].HotGas>=0);
     assert(Gal[p].MetalsHotGas>=0);
+    
+    // if a satellite and HeatedToCentral is not on, still need to account for the fact that the ejected reservoir is meant to be zero for satellites inside the virial radius
+    if( (p!=centralgal) && (HeatedToCentral==0) )
+    {
+        double Rsat = get_satellite_radius(p, centralgal);
+        if(Rsat <= Gal[centralgal].Rvir)
+        {
+            Gal[centralgal].HotGas += Gal[p].EjectedMass;
+            Gal[centralgal].MetalsHotGas += Gal[p].MetalsEjectedMass;
+            Gal[p].EjectedMass = 0.0;
+            Gal[p].MetalsEjectedMass = 0.0;
+        }
+
+    }
 }
 
 
@@ -1287,6 +1324,7 @@ void delayed_feedback(int p, int k_now, int centralgal, double time, double dt)
         j_hot = 2 * Gal[centralgal].Vvir * Gal[centralgal].CoolScaleRadius;
         hot_thermal_and_kinetic = 0.5 * (sqr(Gal[centralgal].Vvir) + sqr(j_hot)/Gal[centralgal].R2_hot_av);
         hot_specific_energy = Gal[centralgal].HotGasPotential + hot_thermal_and_kinetic - satellite_specific_energy;
+        ejected_specific_energy = Gal[centralgal].EjectedPotential + hot_thermal_and_kinetic - satellite_specific_energy;
     }
     else
     {
@@ -1294,8 +1332,8 @@ void delayed_feedback(int p, int k_now, int centralgal, double time, double dt)
         j_hot = 2 * Gal[p].Vvir * Gal[p].CoolScaleRadius;
         hot_thermal_and_kinetic = 0.5 * (sqr(Gal[p].Vvir) + sqr(j_hot)/Gal[p].R2_hot_av);
         hot_specific_energy = Gal[p].HotGasPotential + hot_thermal_and_kinetic;
+        ejected_specific_energy = Gal[p].EjectedPotential + hot_thermal_and_kinetic;
     }
-    ejected_specific_energy = Gal[centralgal].EjectedPotential + hot_thermal_and_kinetic - satellite_specific_energy;
     
     if(!(ejected_specific_energy>hot_specific_energy))
     {
@@ -1578,4 +1616,21 @@ void delayed_feedback(int p, int k_now, int centralgal, double time, double dt)
         update_from_ejection(p, centralgal, Gal[centralgal].HotGas, time, k_now);
         
     update_stellar_dispersion(p);
+    
+    // if a satellite and HeatedToCentral is not on, still need to account for the fact that the ejected reservoir is meant to be zero for satellites inside the virial radius
+    if( (p!=centralgal) && (HeatedToCentral==0) )
+    {
+        double Rsat = get_satellite_radius(p, centralgal);
+        if(Rsat <= Gal[centralgal].Rvir)
+        {
+            Gal[centralgal].HotGas += Gal[p].EjectedMass;
+            Gal[centralgal].MetalsHotGas += Gal[p].MetalsEjectedMass;
+            Gal[p].EjectedMass = 0.0;
+            Gal[p].EjectedMass_Reinc[k_now] = 0.0;
+            Gal[p].MetalsEjectedMass = 0.0;
+            Gal[p].MetalsEjectedMass_Reinc[k_now] = 0.0;
+        }
+
+    }
+
 }
