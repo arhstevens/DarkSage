@@ -12,6 +12,7 @@
 
 void reincorporate_gas(int centralgal, double dt, double time, int k_now)
 {
+    // use of "centralgal" here as a label is from old code, when this wasn't called for satelites.  This can now be called for any galaxy.
   double reincorporated, metallicity, eject_sum, eject_metals_sum;
     int k, kk;
     
